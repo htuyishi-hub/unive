@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - UR Course Management</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--header-bg);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .program-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-left: 2rem;
+            border-left: 1px solid var(--border);
+        }
+
+        .program-badge {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-btn {
+            position: relative;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: 0.5rem;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--danger);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 1rem;
+            font-weight: 700;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .welcome-section {
+            margin-bottom: 2rem;
+        }
+
+        .welcome-section h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-section p {
+            color: var(--text-muted);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h3 {
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-dropdown {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .module-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .module-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .module-code {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .new-badge {
+            background: var(--success);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .module-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .module-meta {
+            display: flex;
+            gap: 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .module-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .module-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .doc-count {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .lecturer-info {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .recent-docs-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .doc-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .doc-item:last-child {
+            border-bottom: none;
+        }
+
+        .doc-item:hover {
+            background: rgba(59, 130, 246, 0.05);
+            margin: 0 -1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+
+        .doc-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .doc-info {
+            flex: 1;
+        }
+
+        .doc-info h5 {
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .doc-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .doc-meta {
+            text-align: right;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .saved-docs-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .saved-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .saved-item:last-child {
+            border-bottom: none;
+        }
+
+        .saved-item span {
+            font-size: 0.9rem;
+        }
+
+        .groups-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .group-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+        }
+
+        .group-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .group-avatar {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .group-info h5 {
+            font-size: 0.95rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .group-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover { background: var(--accent-hover); }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .notification-panel {
+            position: fixed;
+            top: 60px;
+            right: 2rem;
+            width: 350px;
+            max-height: 400px;
+            background: var(--header-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1rem;
+            display: none;
+            z-index: 200;
+            overflow-y: auto;
+        }
+
+        .notification-panel.show {
+            display: block;
+        }
+
+        .notification-item {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .notification-item.unread {
+            background: rgba(59, 130, 246, 0.05);
+            border-left: 3px solid var(--accent);
+        }
+
+        @media (max-width: 1024px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .program-info {
+                padding-left: 0;
+                border-left: none;
+                padding-top: 1rem;
+                border-top: 1px solid var(--border);
+            }
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification Panel -->
+    <div class="notification-panel" id="notification-panel">
+        <h4 style="margin-bottom: 1rem;">Notifications</h4>
+        <div id="notifications-list"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <h1 onclick="goHome()">⚙️ Admin Portal</h1>
+            <div class="program-info" id="program-info" style="display: none;">
+                <span class="program-badge" id="program-badge">Loading...</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="notification-btn" onclick="toggleNotifications()">
+                🔔
+                <span class="notification-badge" id="notif-count">0</span>
+            </button>
+            <div class="user-menu">
+                <div class="user-avatar" id="user-avatar">S</div>
+                <span id="user-name">Student</span>
+                <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h2 id="welcome-text">Admin Dashboard</h2>
+            <p id="current-semester">View all modules in the system</p>
+        </div>
+
+        <!-- Current Modules -->
+        <div class="section-header">
+            <h3>📚 All Modules</h3>
+            <select class="filter-dropdown" id="semester-filter" onchange="filterBySemester()">
+                <option value="current">Current Semester</option>
+                <option value="all">All Semesters</option>
+                <option value="2024-2025">2024-2025</option>
+                <option value="2025-2026">2025-2026</option>
+            </select>
+        </div>
+
+        <div class="modules-grid" id="modules-grid">
+            <div class="empty-state">
+                <div class="empty-state-icon">📚</div>
+                <h3>No modules yet</h3>
+                <p>Enroll in modules to see them here</p>
+            </div>
+        </div>
+
+        <!-- Two Column Section -->
+        <div class="two-column">
+            <div>
+                <!-- Recently Viewed Documents -->
+                <div class="section-header">
+                    <h3>🕐 Recently Viewed</h3>
+                </div>
+                <div class="recent-docs-card" id="recent-docs">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📄</div>
+                        <p>No recently viewed documents</p>
+                    </div>
+                </div>
+
+                <!-- Group Work -->
+                <div class="groups-card">
+                    <div class="section-header">
+                        <h3>👥 My Groups</h3>
+                        <button class="btn btn-outline btn-sm">+ New Group</button>
+                    </div>
+                    <div id="groups-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <p>No groups yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <!-- Saved Documents -->
+                <div class="section-header">
+                    <h3>⭐ Saved</h3>
+                </div>
+                <div class="saved-docs-card" id="saved-docs">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⭐</div>
+                        <p>No saved documents</p>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="glass-card" style="margin-top: 1.5rem;">
+                    <h4 style="margin-bottom: 1rem;">📊 Quick Stats</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 0.75rem;">
+                            <h3 style="font-size: 1.75rem; color: var(--accent);" id="stat-modules">0</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted);">Modules</p>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 0.75rem;">
+                            <h3 style="font-size: 1.75rem; color: var(--success);" id="stat-docs">0</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted);">Documents</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = '/api';
+        let authToken = localStorage.getItem('ur_access_token') || localStorage.getItem('ur_admin_token');
+        let currentUser = JSON.parse(localStorage.getItem('ur_user') || localStorage.getItem('ur_admin_user') || 'null');
+        let enrolledModules = [];
+        let notifications = [];
+        let isAdmin = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authToken || !currentUser) {
+                window.location.href = '/';
+                return;
+            }
+            
+            // Check if admin - only admins can access dashboard
+            isAdmin = localStorage.getItem('ur_admin_token') !== null;
+            
+            if (!isAdmin) {
+                // Non-admins are redirected to home
+                window.location.href = '/';
+                return;
+            }
+            
+            verifyAdminAccess();
+        });
+
+        async function verifyAdminAccess() {
+            try {
+                const response = await fetch('/auth/me', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.user.role !== 'admin') {
+                        window.location.href = '/';
+                        return;
+                    }
+                    currentUser = data.user;
+                } else {
+                    window.location.href = '/';
+                    return;
+                }
+            } catch (e) {
+                window.location.href = '/';
+                return;
+            }
+            initDashboard();
+        }
+
+        async function initDashboard() {
+            // Update user info
+            document.getElementById('user-name').textContent = currentUser.name;
+            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('welcome-text').textContent = `Admin Dashboard: ${currentUser.name}`;
+            
+            await loadEnrolledModules();
+            updateStats();
+        }
+
+        async function loadEnrolledModules() {
+            try {
+                const response = await fetch(API_URL + '/enrolled', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    enrolledModules = data.modules || [];
+                    renderModules(enrolledModules);
+                    renderProgramInfo();
+                } else {
+                    document.getElementById('modules-grid').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔐</div>
+                            <h3>Please login again</h3>
+                            <p>Your session has expired</p>
+                            <button class="btn btn-primary" style="margin-top: 1rem;" onclick="logout()">Go to Login</button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading modules:', error);
+                document.getElementById('modules-grid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <h3>Error loading modules</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderProgramInfo() {
+            if (enrolledModules.length > 0) {
+                const currentModule = enrolledModules[0];
+                document.getElementById('program-badge').textContent = `${currentModule.college_name || 'UR'} - ${currentModule.semester || 'Current'}`;
+                document.getElementById('current-semester').textContent = `${currentModule.academic_year || '2025-2026'} Academic Year`;
+            } else {
+                document.getElementById('program-badge').textContent = 'No Program';
+                document.getElementById('current-semester').textContent = 'Enroll in modules to get started';
+            }
+        }
+
+        function renderModules(modules) {
+            if (modules.length === 0) {
+                document.getElementById('modules-grid').innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">📚</div>
+                        <h3>No modules yet</h3>
+                        <p>Enroll in modules to see them here</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="window.location.href='/?view=enroll'">Browse Available Modules</button>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('modules-grid').innerHTML = modules.map((m, index) => {
+                const hasNew = index < 2; // Simulate new uploads
+                return `
+                    <div class="module-card" onclick="openModule(${m.id})">
+                        <div class="module-header">
+                            <span class="module-code">${m.module_code}</span>
+                            ${hasNew ? '<span class="new-badge">NEW</span>' : ''}
+                        </div>
+                        <h4>${m.name}</h4>
+                        <div class="module-meta">
+                            <span>📊 ${m.semester || 'Semester'}</span>
+                            <span>📁 ${m.document_count || 0} documents</span>
+                        </div>
+                        <div class="module-footer">
+                            <div class="doc-count">
+                                <span>📄</span>
+                                <span>${m.document_count || 0} files</span>
+                            </div>
+                            <div class="lecturer-info">
+                                ${m.lecturer_name || 'View Documents →'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterBySemester() {
+            const filter = document.getElementById('semester-filter').value;
+            
+            if (filter === 'current') {
+                renderModules(enrolledModules);
+            } else if (filter === 'all') {
+                renderModules(enrolledModules);
+            } else {
+                const filtered = enrolledModules.filter(m => m.academic_year && m.academic_year.includes(filter));
+                renderModules(filtered.length > 0 ? filtered : enrolledModules);
+            }
+        }
+
+        function openModule(moduleId) {
+            window.location.href = `/?module=${moduleId}`;
+        }
+
+        function updateStats() {
+            document.getElementById('stat-modules').textContent = enrolledModules.length;
+            const totalDocs = enrolledModules.reduce((sum, m) => sum + (m.document_count || 0), 0);
+            document.getElementById('stat-docs').textContent = totalDocs;
+        }
+
+        // Mock recently viewed documents
+        function renderRecentDocs() {
+            const mockDocs = [
+                { title: 'Lecture Notes - Chapter 5', module: 'CS101', type: 'PDF', time: '2 hours ago' },
+                { title: 'Past Exam Solutions', module: 'CS102', type: 'PDF', time: 'Yesterday' },
+                { title: 'Reference: Algorithms', module: 'CS103', type: 'PDF', time: '3 days ago' }
+            ];
+
+            document.getElementById('recent-docs').innerHTML = mockDocs.map(doc => `
+                <div class="doc-item">
+                    <div class="doc-icon">📄</div>
+                    <div class="doc-info">
+                        <h5>${doc.title}</h5>
+                        <p>${doc.module} • ${doc.type}</p>
+                    </div>
+                    <div class="doc-meta">${doc.time}</div>
+                </div>
+            `).join('');
+        }
+
+        // Mock saved documents
+        function renderSavedDocs() {
+            const mockSaved = [
+                { title: 'Important Formulas', module: 'MATH101' },
+                { title: 'Study Guide Final', module: 'CS101' }
+            ];
+
+            document.getElementById('saved-docs').innerHTML = mockSaved.map(doc => `
+                <div class="saved-item">
+                    <span>⭐</span>
+                    <span>${doc.title}</span>
+                    <span style="color: var(--text-muted); font-size: 0.8rem;">(${doc.module})</span>
+                </div>
+            `).join('');
+        }
+
+        // Mock groups
+        function renderGroups() {
+            const mockGroups = [
+                { name: 'Project Team Alpha', module: 'CS301', members: 4 },
+                { name: 'Study Group - Room 201', module: 'MATH101', members: 6 }
+            ];
+
+            document.getElementById('groups-list').innerHTML = mockGroups.map(group => `
+                <div class="group-item">
+                    <div class="group-avatar">${group.name.charAt(0)}</div>
+                    <div class="group-info">
+                        <h5>${group.name}</h5>
+                        <p>${group.module} • ${group.members} members</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize additional sections
+        renderRecentDocs();
+        renderSavedDocs();
+        renderGroups();
+
+        function toggleNotifications() {
+            const panel = document.getElementById('notification-panel');
+            panel.classList.toggle('show');
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        function logout() {
+            localStorage.removeItem('ur_access_token');
+            localStorage.removeItem('ur_user');
+            localStorage.removeItem('ur_admin_token');
+            localStorage.removeItem('ur_admin_user');
+            window.location.href = '/';
+        }
+
+        // Close notification panel when clicking outside
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('notification-panel');
+            if (!panel.contains(e.target) && !e.target.closest('.notification-btn')) {
+                panel.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

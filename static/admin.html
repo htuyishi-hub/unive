@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UR Admin Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            min-height: 100vh;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        aside {
+            width: 260px;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            padding: 1.5rem 1rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        aside h1 {
+            font-size: 1.25rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            padding: 0 0.5rem;
+        }
+        
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #64748b;
+            padding: 0 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        aside nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 0.65rem 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.25rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        aside nav a:hover, aside nav a.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+        }
+        
+        aside nav a .icon {
+            font-size: 1.1rem;
+        }
+        
+        main {
+            flex: 1;
+            padding: 2rem 3rem;
+            overflow-y: auto;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-header h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        
+        .page-header p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+        
+        .btn-primary:hover { background: #4f46e5; }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover { background: #059669; }
+        
+        .btn-danger {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+        
+        .btn-danger:hover { background: #ef4444; color: white; }
+        
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .card-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 0.4rem;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            color: #64748b;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(15, 23, 42, 0.3);
+        }
+        
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem;
+        }
+        
+        tr:hover td {
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+        
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+        
+        code {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+        
+        .stat-card h3 {
+            font-size: 1.75rem;
+            color: #6366f1;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-card p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-radius: 0.5rem;
+        }
+        
+        .tab:hover {
+            color: #f1f5f9;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .tab.active {
+            color: #a5b4fc;
+            background: rgba(99, 102, 241, 0.15);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+        
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .doc-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .doc-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .doc-info {
+            flex: 1;
+        }
+        
+        .doc-info h5 {
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .doc-info p {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        .announcement-item {
+            padding: 1rem;
+            background: rgba(99, 102, 241, 0.05);
+            border-left: 3px solid #6366f1;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .announcement-item h5 {
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+        }
+        
+        .announcement-item p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        
+        .announcement-item small {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        @media (max-width: 1024px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-container { flex-direction: column; }
+            aside { width: 100%; height: auto; position: relative; }
+            main { padding: 1.5rem; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+        
+        /* Login Modal */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .login-overlay.hidden { display: none; }
+        
+        .login-box {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+        
+        .login-box h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .login-box p {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+        }
+        
+        .login-box .form-group { text-align: left; }
+        
+        .login-box input {
+            margin-bottom: 1rem;
+        }
+        
+        .login-box .btn {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.8rem;
+        }
+        
+        .login-error {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="login-view" class="login-overlay">
+        <div class="login-box">
+            <h1>UR Admin Portal</h1>
+            <p>Sign in to manage the academic system</p>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="admin-email">Email</label>
+                    <input type="email" id="admin-email" placeholder="admin@ur.ac.rw" required>
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Password</label>
+                    <input type="password" id="admin-password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Sign In</button>
+                <p id="login-error" class="login-error"></p>
+            </form>
+            <p style="margin-top: 1.5rem; font-size: 0.8rem; color: #64748b;">
+                Default: admin@ur.ac.rw / password123
+            </p>
+        </div>
+    </div>
+    
+    <div class="dashboard-container">
+        <aside>
+            <h1 onclick="showDashboard()">⚙️ UR Admin</h1>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Overview</div>
+                <nav>
+                    <a onclick="showDashboard()" class="active" id="nav-dashboard">
+                        <span class="icon">📊</span> Dashboard
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Academic Structure</div>
+                <nav>
+                    <a onclick="showAcademicYears()" id="nav-years">
+                        <span class="icon">📅</span> Academic Years
+                    </a>
+                    <a onclick="showSemesters()" id="nav-semesters">
+                        <span class="icon">📆</span> Semesters
+                    </a>
+                    <a onclick="showModules()" id="nav-modules">
+                        <span class="icon">📚</span> Modules
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Content</div>
+                <nav>
+                    <a onclick="showDocuments()" id="nav-documents">
+                        <span class="icon">📄</span> Documents
+                    </a>
+                    <a onclick="showAnnouncements()" id="nav-announcements">
+                        <span class="icon">📢</span> Announcements
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Users & Groups</div>
+                <nav>
+                    <a onclick="showUsers()" id="nav-users">
+                        <span class="icon">👥</span> Users
+                    </a>
+                    <a onclick="showGroups()" id="nav-groups">
+                        <span class="icon">👨‍👩‍👧‍👦</span> Groups
+                    </a>
+                    <a onclick="showStudentMapping()" id="nav-mapping">
+                        <span class="icon">🎓</span> Student Mapping
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="nav-section" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="padding: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;" id="admin-avatar">A</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="admin-name">Admin</div>
+                            <div style="font-size: 0.7rem; color: #64748b;" id="admin-email">admin@ur.ac.rw</div>
+                        </div>
+                    </div>
+                </div>
+                <nav>
+                    <a href="/">
+                        <span class="icon">🌐</span> Live Site
+                    </a>
+                    <a onclick="logout()" style="color: #ef4444;">
+                        <span class="icon">🚪</span> Logout
+                    </a>
+                </nav>
+            </div>
+        </aside>
+        
+        <main>
+            <div id="page-content">
+                <!-- Content loaded dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        
+        let authToken = localStorage.getItem('ur_admin_token');
+        let currentUser = JSON.parse(localStorage.getItem('ur_admin_user') || 'null');
+
+        // Check authentication on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for token in URL query parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenFromUrl = urlParams.get('token');
+            
+            if (tokenFromUrl) {
+                // Token passed via URL - store it and verify
+                authToken = tokenFromUrl;
+                localStorage.setItem('ur_admin_token', tokenFromUrl);
+                // Clean URL without token
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            
+            if (authToken && currentUser) {
+                // Verify token is still valid
+                verifyAuth();
+            } else {
+                showLogin();
+            }
+        });
+
+        async function verifyAuth() {
+            try {
+                const response = await fetch('/auth/me', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (!response.ok) {
+                    clearAuth();
+                    showLogin();
+                    return;
+                }
+                
+                const data = await response.json();
+                if (data.user.role !== 'admin') {
+                    clearAuth();
+                    showLogin();
+                    return;
+                }
+                
+                currentUser = data.user;
+                hideLogin();
+                showDashboard();
+            } catch (error) {
+                clearAuth();
+                showLogin();
+            }
+        }
+
+        function clearAuth() {
+            localStorage.removeItem('ur_admin_token');
+            localStorage.removeItem('ur_admin_user');
+            authToken = null;
+            currentUser = null;
+        }
+
+        function showLogin() {
+            document.getElementById('login-view').classList.remove('hidden');
+        }
+
+        function hideLogin() {
+            document.getElementById('login-view').classList.add('hidden');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value.trim().toLowerCase();
+            const password = document.getElementById('admin-password').value;
+            const errorEl = document.getElementById('login-error');
+            
+            errorEl.style.display = 'none';
+            
+            try {
+                const response = await fetch('/auth/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('ur_admin_token', authToken);
+                    localStorage.setItem('ur_admin_user', JSON.stringify(currentUser));
+                    hideLogin();
+                    showDashboard();
+                } else {
+                    errorEl.textContent = data.error || 'Invalid credentials';
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                errorEl.textContent = 'Login failed. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        function logout() {
+            clearAuth();
+            showLogin();
+        }
+
+        async function apiFetch(endpoint, options = {}) {
+            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+            const response = await fetch(API_URL + endpoint, { ...options, headers });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'API error');
+            return data;
+        }
+
+        function setActiveNav(id) {
+            document.querySelectorAll('aside nav a').forEach(a => a.classList.remove('active'));
+            const nav = document.getElementById('nav-' + id);
+            if (nav) nav.classList.add('active');
+        }
+
+        // ==================== DASHBOARD ====================
+        async function showDashboard() {
+            setActiveNav('dashboard');
+            document.title = 'Admin Dashboard - UR Admin Portal';
+            hideLogin();
+            
+            // Update user info in sidebar
+            if (currentUser) {
+                document.getElementById('admin-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+                document.getElementById('admin-name').textContent = currentUser.name;
+                document.getElementById('admin-email').textContent = currentUser.email;
+            }
+            
+            try {
+                const [colleges, years, modules, users] = await Promise.all([
+                    apiFetch('/colleges'),
+                    apiFetch('/academic-years'),
+                    apiFetch('/modules'),
+                    apiFetch('/admin/users').catch(() => ({ users: [] }))
+                ]);
+
+                const totalDocs = modules.modules?.reduce((sum, m) => sum + (m.document_count || 0), 0) || 0;
+
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Dashboard</h2>
+                            <p>Overview of your academic system</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showAcademicYears()">+ New Academic Year</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>${colleges.colleges?.length || 0}</h3>
+                            <p>Colleges</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${colleges.colleges?.reduce((sum, c) => sum + (c.school_count || 0), 0)}</h3>
+                            <p>Schools</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${years.academic_years?.length || 0}</h3>
+                            <p>Academic Years</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${modules.modules?.length || 0}</h3>
+                            <p>Modules</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${totalDocs}</h3>
+                            <p>Documents</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${users.users?.length || 0}</h3>
+                            <p>Users</p>
+                        </div>
+                    </div>
+
+                    <div class="two-col">
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <h3>📅 Active Academic Year</h3>
+                            </div>
+                            ${years.academic_years?.find(y => y.is_active) ? `
+                                <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 0.5rem;">
+                                    <strong>${years.academic_years.find(y => y.is_active).name}</strong>
+                                    <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.25rem;">
+                                        ${years.academic_years.find(y => y.is_active).start_date} - ${years.academic_years.find(y => y.is_active).end_date}
+                                    </p>
+                                </div>
+                            ` : '<p style="color: #64748b;">No active academic year</p>'}
+                        </div>
+
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <h3>⚡ Quick Actions</h3>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                <button class="btn btn-primary btn-sm" onclick="showAcademicYears()">Add Year</button>
+                                <button class="btn btn-primary btn-sm" onclick="showModules()">Add Module</button>
+                                <button class="btn btn-primary btn-sm" onclick="showDocuments()">Upload Doc</button>
+                                <button class="btn btn-primary btn-sm" onclick="showAnnouncements()">Post Announcement</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
+        }
+
+        // ==================== ACADEMIC YEARS ====================
+        async function showAcademicYears() {
+            setActiveNav('years');
+            try {
+                const data = await apiFetch('/academic-years');
+                const years = data.academic_years || [];
+
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Academic Years</h2>
+                            <p>Manage academic years and semesters</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateYearForm()">+ New Academic Year</button>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3>All Academic Years</h3>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Period</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${years.map(y => `
+                                    <tr>
+                                        <td><code>${y.year_code}</code></td>
+                                        <td>${y.name}</td>
+                                        <td>${y.start_date} - ${y.end_date}</td>
+                                        <td>
+                                            <span class="badge ${y.is_active ? 'badge-success' : y.is_completed ? '' : ''}">
+                                                ${y.is_active ? 'Active' : y.is_completed ? 'Completed' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="action-btns">
+                                                ${!y.is_active && !y.is_completed ? `<button class="btn btn-success btn-sm" onclick="activateYear(${y.id})">Activate</button>` : ''}
+                                                ${y.is_active ? `<button class="btn btn-danger btn-sm" onclick="completeYear(${y.id})">Complete</button>` : ''}
+                                                <button class="btn btn-primary btn-sm" onclick="showSemestersForYear(${y.id}, '${y.name}')">Semesters</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('') || '<tr><td colspan="5"><div class="empty-state">No academic years found</div></td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function showCreateYearForm() {
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Create Academic Year</h2>
+                        <p>Set up a new academic year</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showAcademicYears()">← Back</button>
+                </div>
+                <div class="glass-card">
+                    <form onsubmit="createYear(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Year Code</label>
+                                <input type="text" id="year-code" placeholder="e.g., 2025-2026" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" id="year-name" placeholder="e.g., Academic Year 2025-2026" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" id="year-start" required>
+                            </div>
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" id="year-end" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Academic Year</button>
+                    </form>
+                </div>
+            `;
+        }
+
+        async function createYear(e) {
+            e.preventDefault();
+            try {
+                await apiFetch('/admin/academic-years', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        year_code: document.getElementById('year-code').value,
+                        name: document.getElementById('year-name').value,
+                        start_date: document.getElementById('year-start').value,
+                        end_date: document.getElementById('year-end').value
+                    })
+                });
+                showAcademicYears();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function activateYear(id) {
+            try {
+                await apiFetch('/admin/academic-years/' + id + '/activate', { method: 'POST' });
+                showAcademicYears();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function completeYear(id) {
+            try {
+                await apiFetch('/admin/academic-years/' + id + '/complete', { method: 'POST' });
+                showAcademicYears();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // ==================== SEMESTERS ====================
+        async function showSemesters() {
+            setActiveNav('semesters');
+            try {
+                const years = await apiFetch('/academic-years');
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Semesters</h2>
+                            <p>Manage semesters for each academic year</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateSemesterForm()">+ New Semester</button>
+                    </div>
+                    <div class="glass-card">
+                        <p style="color: #64748b;">Select an academic year to manage its semesters.</p>
+                        <div style="margin-top: 1rem;">
+                            ${years.academic_years?.map(y => `
+                                <div style="padding: 1rem; background: rgba(15, 23, 42, 0.3); border-radius: 0.5rem; margin-bottom: 0.75rem;">
+                                    <strong>${y.name}</strong>
+                                    <span class="badge ${y.is_active ? 'badge-success' : ''}">${y.is_active ? 'Active' : ''}</span>
+                                    <button class="btn btn-primary btn-sm" style="margin-left: 1rem;" onclick="showSemestersForYear(${y.id}, '${y.name}')">Manage Semesters</button>
+                                </div>
+                            `).join('') || '<p>No academic years found</p>'}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function showSemestersForYear(yearId, yearName) {
+            try {
+                const year = await apiFetch('/academic-years/' + yearId);
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Semesters - ${yearName}</h2>
+                            <p>Manage semesters for this academic year</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateSemesterForm(${yearId})">+ New Semester</button>
+                    </div>
+                    <div class="glass-card">
+                        ${year.semesters?.length > 0 ? `
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Period</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${year.semesters.map(s => `
+                                        <tr>
+                                            <td><code>${s.code}</code></td>
+                                            <td>${s.name}</td>
+                                            <td>${s.start_date} - ${s.end_date}</td>
+                                            <td>
+                                                <div class="action-btns">
+                                                    <button class="btn btn-primary btn-sm" onclick="showModulesForSemester(${s.id}, '${s.name}')">Modules</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p style="color: #64748b;">No semesters found. Create one to get started.</p>'}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function showCreateSemesterForm(yearId = null) {
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Create Semester</h2>
+                        <p>Add a new semester</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showSemesters()">← Back</button>
+                </div>
+                <div class="glass-card">
+                    <form onsubmit="createSemester(event, ${yearId})">
+                        <div class="form-group">
+                            <label>Academic Year</label>
+                            <input type="hidden" id="sem-year-id" value="${yearId || ''}">
+                            <select id="sem-year-select" required>
+                                <option value="">Select Academic Year</option>
+                            </select>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Semester Code</label>
+                                <input type="text" id="sem-code" placeholder="e.g., S1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Semester Name</label>
+                                <input type="text" id="sem-name" placeholder="e.g., Semester 1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" id="sem-start" required>
+                            </div>
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" id="sem-end" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Semester</button>
+                    </form>
+                </div>
+            `;
+            // Load years into select
+            apiFetch('/academic-years').then(data => {
+                const select = document.getElementById('sem-year-select');
+                data.academic_years?.forEach(y => {
+                    const opt = document.createElement('option');
+                    opt.value = y.id;
+                    opt.textContent = y.name;
+                    if (y.id == yearId) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        async function createSemester(e, yearId) {
+            e.preventDefault();
+            const yid = document.getElementById('sem-year-id').value || document.getElementById('sem-year-select').value;
+            try {
+                await apiFetch('/admin/semesters', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        academic_year_id: parseInt(yid),
+                        code: document.getElementById('sem-code').value,
+                        name: document.getElementById('sem-name').value,
+                        start_date: document.getElementById('sem-start').value,
+                        end_date: document.getElementById('sem-end').value
+                    })
+                });
+                showSemestersForYear(parseInt(yid), '');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function showModulesForSemester(semesterId, semesterName) {
+            try {
+                const modules = await apiFetch('/modules?semester_id=' + semesterId);
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Modules - ${semesterName}</h2>
+                            <p>Modules for this semester</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateModuleForm(${semesterId})">+ New Module</button>
+                    </div>
+                    <div class="glass-card">
+                        ${modules.modules?.length > 0 ? `
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Credits</th>
+                                        <th>Lecturer</th>
+                                        <th>Documents</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${modules.modules.map(m => `
+                                        <tr>
+                                            <td><code>${m.module_code}</code></td>
+                                            <td>${m.name}</td>
+                                            <td>${m.credits}</td>
+                                            <td>${m.lecturer_name || '-'}</td>
+                                            <td>${m.document_count || 0}</td>
+                                            <td>
+                                                <div class="action-btns">
+                                                    <button class="btn btn-primary btn-sm" onclick="showDocumentsForModule(${m.id}, '${m.name}')">Documents</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p style="color: #64748b;">No modules found. Create one to get started.</p>'}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
+        }
+
+        // ==================== MODULES ====================
+        async function showModules() {
+            setActiveNav('modules');
+            try {
+                const [data, colleges] = await Promise.all([
+                    apiFetch('/modules'),
+                    apiFetch('/colleges')
+                ]);
+
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Modules</h2>
+                            <p>Manage all course modules</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateModuleForm()">+ New Module</button>
+                    </div>
+                    <div class="glass-card">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>School</th>
+                                    <th>Semester</th>
+                                    <th>Credits</th>
+                                    <th>Lecturer</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.modules?.map(m => `
+                                    <tr>
+                                        <td><code>${m.module_code}</code></td>
+                                        <td>${m.name}</td>
+                                        <td>${m.school_name}</td>
+                                        <td>${m.semester_name}</td>
+                                        <td>${m.credits}</td>
+                                        <td>${m.lecturer_name || '-'}</td>
+                                        <td>
+                                            <div class="action-btns">
+                                                <button class="btn btn-primary btn-sm" onclick="showDocumentsForModule(${m.id}, '${m.name}')">Documents</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('') || '<tr><td colspan="7"><div class="empty-state">No modules found</div></td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function showCreateModuleForm(semesterId = null) {
+            const [data, colleges] = await Promise.all([
+                apiFetch('/modules'),
+                apiFetch('/colleges')
+            ]);
+
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Create Module</h2>
+                        <p>Add a new course module</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showModules()">← Back</button>
+                </div>
+                <div class="glass-card">
+                    <form onsubmit="createModule(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Module Code</label>
+                                <input type="text" id="mod-code" placeholder="e.g., CS101" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Module Name</label>
+                                <input type="text" id="mod-name" placeholder="e.g., Introduction to Computer Science" required>
+                            </div>
+                            <div class="form-group">
+                                <label>College</label>
+                                <select id="mod-college" onchange="loadSchools(this.value)">
+                                    <option value="">Select College</option>
+                                    ${colleges.colleges?.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>School</label>
+                                <select id="mod-school" required>
+                                    <option value="">Select School</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Semester</label>
+                                <select id="mod-semester" required>
+                                    <option value="">Select Semester</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Credits</label>
+                                <input type="number" id="mod-credits" value="3" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Lecturer Name</label>
+                                <input type="text" id="mod-lecturer" placeholder="Dr. John Doe">
+                            </div>
+                            <div class="form-group">
+                                <label>Lecturer Email</label>
+                                <input type="email" id="mod-lecturer-email" placeholder="lecturer@ur.ac.rw">
+                            </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>Description</label>
+                                <textarea id="mod-desc" placeholder="Course description..."></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Module</button>
+                    </form>
+                </div>
+            `;
+
+            // Load semesters
+            const years = await apiFetch('/academic-years');
+            const semSelect = document.getElementById('mod-semester');
+            years.academic_years?.forEach(y => {
+                if (y.semesters) {
+                    y.semesters.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = `${y.name} - ${s.name}`;
+                        if (s.id == semesterId) opt.selected = true;
+                        semSelect.appendChild(opt);
+                    });
+                }
+            });
+        }
+
+        async function loadSchools(collegeId) {
+            const schools = await apiFetch('/schools?college_id=' + collegeId);
+            const select = document.getElementById('mod-school');
+            select.innerHTML = '<option value="">Select School</option>';
+            schools.schools?.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name;
+                select.appendChild(opt);
+            });
+        }
+
+        async function createModule(e) {
+            e.preventDefault();
+            try {
+                await apiFetch('/admin/modules', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        module_code: document.getElementById('mod-code').value,
+                        name: document.getElementById('mod-name').value,
+                        description: document.getElementById('mod-desc').value,
+                        school_id: parseInt(document.getElementById('mod-school').value),
+                        semester_id: parseInt(document.getElementById('mod-semester').value),
+                        credits: parseInt(document.getElementById('mod-credits').value),
+                        lecturer_name: document.getElementById('mod-lecturer').value,
+                        lecturer_email: document.getElementById('mod-lecturer-email').value
+                    })
+                });
+                showModules();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // ==================== DOCUMENTS ====================
+        async function showDocuments() {
+            setActiveNav('documents');
+            const modules = await apiFetch('/modules');
+            
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Documents</h2>
+                        <p>Upload and organize course documents</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showUploadDocumentForm()">+ Upload Document</button>
+                </div>
+                <div class="glass-card">
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterDocs('all')">All Documents</button>
+                        <button class="tab" onclick="filterDocs('notes')">📝 Lecture Notes</button>
+                        <button class="tab" onclick="filterDocs('exams')">📄 Past Exams</button>
+                        <button class="tab" onclick="filterDocs('references')">📚 References</button>
+                    </div>
+                    <p style="color: #64748b; margin-bottom: 1rem;">Select a module to manage its documents.</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        ${modules.modules?.map(m => `
+                            <button class="btn btn-outline btn-sm" onclick="showDocumentsForModule(${m.id}, '${m.name}')">
+                                ${m.module_code}
+                            </button>
+                        `).join('') || '<p>No modules found</p>'}
+                    </div>
+                    <div id="docs-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📄</div>
+                            <p>Select a module to view documents</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function showUploadDocumentForm() {
+            const modules = await apiFetch('/modules');
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Upload Document</h2>
+                        <p>Add a new document to a module</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showDocuments()">← Back</button>
+                </div>
+                <div class="glass-card">
+                    <form onsubmit="uploadDocument(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Module</label>
+                                <select id="doc-module" required>
+                                    <option value="">Select Module</option>
+                                    ${modules.modules?.map(m => `<option value="${m.id}">${m.module_code} - ${m.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select id="doc-category" required>
+                                    <option value="notes">Lecture Notes</option>
+                                    <option value="exams">Past Exams</option>
+                                    <option value="references">References</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Document Title</label>
+                                <input type="text" id="doc-title" placeholder="e.g., Chapter 1 - Introduction" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea id="doc-desc" placeholder="Brief description..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>File</label>
+                                <input type="file" id="doc-file" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Document</button>
+                    </form>
+                </div>
+            `;
+        }
+
+        async function uploadDocument(e) {
+            e.preventDefault();
+            alert('Document upload would be implemented with file handling. For now, this is a placeholder.');
+            showDocuments();
+        }
+
+        async function showDocumentsForModule(moduleId, moduleName) {
+            const module = await apiFetch('/modules/' + moduleId);
+            document.getElementById('docs-list').innerHTML = `
+                <h4 style="margin-bottom: 1rem;">Documents for ${moduleName}</h4>
+                ${module.documents?.length > 0 ? module.documents.map(d => `
+                    <div class="doc-item">
+                        <div class="doc-icon">📄</div>
+                        <div class="doc-info">
+                            <h5>${d.title}</h5>
+                            <p>${d.category} • ${d.file_type}</p>
+                        </div>
+                        <span class="badge">${d.download_count} downloads</span>
+                    </div>
+                `).join('') : '<p style="color: #64748b;">No documents uploaded yet.</p>'}
+            `;
+        }
+
+        // ==================== ANNOUNCEMENTS ====================
+        async function showAnnouncements() {
+            setActiveNav('announcements');
+            const modules = await apiFetch('/modules');
+            
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Announcements</h2>
+                        <p>Post announcements for modules</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showCreateAnnouncementForm()">+ New Announcement</button>
+                </div>
+                <div class="glass-card">
+                    <h4 style="margin-bottom: 1rem;">Recent Announcements</h4>
+                    <div class="announcement-item">
+                        <h5>Welcome to Semester 1!</h5>
+                        <p>Welcome back! All modules are now open for enrollment.</p>
+                        <small>Posted 2 days ago • General</small>
+                    </div>
+                    <div class="announcement-item">
+                        <h5>Midterm Exams Schedule</h5>
+                        <p>The midterm exam schedule has been published.</p>
+                        <small>Posted 1 week ago • All Modules</small>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showCreateAnnouncementForm() {
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Post Announcement</h2>
+                        <p>Create a new announcement</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showAnnouncements()">← Back</button>
+                </div>
+                <div class="glass-card">
+                    <form onsubmit="createAnnouncement(event)">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="ann-title" placeholder="Announcement title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Message</label>
+                            <textarea id="ann-message" rows="5" placeholder="Write your announcement..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Announcement</button>
+                    </form>
+                </div>
+            `;
+        }
+
+        async function createAnnouncement(e) {
+            e.preventDefault();
+            alert('Announcement posted successfully!');
+            showAnnouncements();
+        }
+
+        // ==================== USERS ====================
+        async function showUsers() {
+            setActiveNav('users');
+            try {
+                const data = await apiFetch('/admin/users');
+                const users = data.users || [];
+                
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Users</h2>
+                            <p>Manage system users</p>
+                        </div>
+                    </div>
+                    <div class="glass-card">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Modules</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${users.map(u => `
+                                    <tr>
+                                        <td>${u.id}</td>
+                                        <td>${u.name}</td>
+                                        <td>${u.email}</td>
+                                        <td><span class="badge">${u.role}</span></td>
+                                        <td>${u.module_count}</td>
+                                        <td>
+                                            <div class="action-btns">
+                                                ${u.role !== 'admin' ? `<button class="btn btn-success btn-sm" onclick="makeAdmin(${u.id})">Make Admin</button>` : ''}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('') || '<tr><td colspan="6"><div class="empty-state">No users found</div></td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function makeAdmin(userId) {
+            try {
+                await apiFetch('/admin/users/' + userId + '/role', {
+                    method: 'PUT',
+                    body: JSON.stringify({ role: 'admin' })
+                });
+                showUsers();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // ==================== GROUPS ====================
+        async function showGroups() {
+            setActiveNav('groups');
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Groups</h2>
+                        <p>Manage student groups for collaborative work</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showCreateGroupForm()">+ New Group</button>
+                </div>
+                <div class="glass-card">
+                    <h4 style="margin-bottom: 1rem;">Active Groups</h4>
+                    <div class="announcement-item">
+                        <h5>Project Team Alpha</h5>
+                        <p>CS301 - Software Engineering Project • 4 members</p>
+                        <small>Created 3 days ago</small>
+                    </div>
+                    <div class="announcement-item">
+                        <h5>Study Group - Room 201</h5>
+                        <p>MATH101 - Calculus Study Group • 6 members</p>
+                        <small>Created 1 week ago</small>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showCreateGroupForm() {
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Create Group</h2>
+                        <p>Set up a new student group</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showGroups()">← Back</button>
+                </div>
+                <div class="glass-card">
+                    <form onsubmit="createGroup(event)">
+                        <div class="form-group">
+                            <label>Group Name</label>
+                            <input type="text" id="group-name" placeholder="e.g., Project Team Alpha" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Module</label>
+                            <select id="group-module" required>
+                                <option value="">Select Module</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Add Members (comma-separated emails)</label>
+                            <textarea id="group-members" placeholder="student1@ur.ac.rw, student2@ur.ac.rw"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Group</button>
+                    </form>
+                </div>
+            `;
+            // Load modules
+            apiFetch('/modules').then(data => {
+                const select = document.getElementById('group-module');
+                data.modules?.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = `${m.module_code} - ${m.name}`;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        async function createGroup(e) {
+            e.preventDefault();
+            alert('Group created successfully!');
+            showGroups();
+        }
+
+        // ==================== STUDENT MAPPING ====================
+        async function showStudentMapping() {
+            setActiveNav('mapping');
+            document.getElementById('page-content').innerHTML = `
+                <div class="page-header">
+                    <div>
+                        <h2>Student Mapping</h2>
+                        <p>Assign students to programs, years, and semesters</p>
+                    </div>
+                </div>
+                <div class="glass-card">
+                    <p style="color: #64748b; margin-bottom: 1rem;">Map students to their academic programs. This determines which modules appear on their dashboard.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Email</th>
+                                <th>Current Program</th>
+                                <th>Year</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>John Doe</td>
+                                <td>john@ur.ac.rw</td>
+                                <td>Computer Science</td>
+                                <td>Year 2</td>
+                                <td><button class="btn btn-primary btn-sm">Edit</button></td>
+                            </tr>
+                            <tr>
+                                <td>Jane Smith</td>
+                                <td>jane@ur.ac.rw</td>
+                                <td>Not Assigned</td>
+                                <td>-</td>
+                                <td><button class="btn btn-primary btn-sm">Assign</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', showDashboard);
+    </script>
+</body>
+</html>
