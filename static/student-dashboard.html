@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--header-bg);
+            padding: 0.85rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-nav a:hover, .header-nav a.active {
+            color: var(--accent);
+        }
+
+        .notification-btn {
+            position: relative;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .notification-btn:hover {
+            color: var(--accent);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            background: var(--danger);
+            color: white;
+            font-size: 0.6rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.25rem;
+            display: grid;
+            grid-template-columns: 260px 1fr 300px;
+            gap: 1.25rem;
+        }
+
+        .sidebar-left {
+            position: sticky;
+            top: 70px;
+            height: fit-content;
+        }
+
+        .profile-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .profile-photo {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: white;
+            margin: 0 auto 0.75rem;
+        }
+
+        .profile-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .profile-email {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .academic-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+            padding: 0.4rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .progress-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .progress-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--accent), var(--accent-light));
+            border-radius: 9999px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .welcome-text h2 {
+            font-size: 1.35rem;
+            margin-bottom: 0.25rem;
+            color: white;
+        }
+
+        .welcome-text p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+        }
+
+        .academic-info {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .academic-item {
+            text-align: center;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .academic-item .label {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .academic-item .value {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .section-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-header h3 {
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-header h3 i {
+            color: var(--accent);
+        }
+
+        .section-link {
+            color: var(--accent);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .section-link:hover {
+            text-decoration: underline;
+        }
+
+        .course-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .course-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .course-item:hover {
+            background: rgba(30, 41, 59, 0.9);
+            transform: translateX(3px);
+        }
+
+        .course-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .course-info {
+            flex: 1;
+        }
+
+        .course-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .course-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .course-progress {
+            width: 70px;
+        }
+
+        .mini-progress {
+            height: 4px;
+            background: var(--border);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-bottom: 0.15rem;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 9999px;
+        }
+
+        .progress-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .sidebar-right {
+            position: sticky;
+            top: 70px;
+            height: fit-content;
+        }
+
+        .notification-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.6rem;
+            background: var(--card-bg);
+            border-radius: 6px;
+        }
+
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .notification-icon.new {
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+        }
+
+        .notification-content h4 {
+            font-size: 0.8rem;
+            margin-bottom: 0.1rem;
+        }
+
+        .notification-content p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.6rem;
+            background: var(--card-bg);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.4rem 0.85rem;
+            background: var(--card-bg);
+            border: none;
+            border-radius: 9999px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .semester-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .semester-header {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.3;
+        }
+
+        .status-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 500;
+        }
+        
+        .download-btn {
+            background: var(--accent);
+            color: white;
+        }
+
+        .status-badge.viewed {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-badge.new {
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar-left, .sidebar-right {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            .welcome-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+            .academic-info {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1 onclick="window.location.href='/my-dashboard'">
+            <i class="fas fa-university"></i> UR Open Courseware
+        </h1>
+        <nav class="header-nav">
+            <a href="/my-courses" onclick="navigateTo('courses')">
+                <i class="fas fa-book"></i> My Courses
+            </a>
+            <a href="/knowledge-commons" onclick="navigateTo('knowledge')">
+                <i class="fas fa-comments"></i> Knowledge Commons
+            </a>
+            <a href="/my-profile" onclick="navigateTo('profile')">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <button class="notification-btn">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notifBadge">3</span>
+            </button>
+            <div class="user-menu" onclick="logout()">
+                <div class="user-avatar" id="userAvatar" style="width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent-light));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:0.85rem;cursor:pointer;">U</div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar-left">
+            <div class="profile-card">
+                <div class="profile-photo"><i class="fas fa-user"></i></div>
+                <h2 class="profile-name" id="profileName">Loading...</h2>
+                <p class="profile-email" id="profileEmail">...</p>
+                <div class="academic-badge" id="academicBadge">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span id="badgeText">Loading...</span>
+                </div>
+            </div>
+
+            <div class="progress-card">
+                <div class="progress-header">
+                    <span class="progress-title">Your Progress</span>
+                    <span class="progress-value" id="progressValue">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div class="progress-stats">
+                    <span id="modulesViewed">0 viewed</span>
+                    <span id="totalModules">of 0 total</span>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <button class="action-btn" onclick="navigateTo('courses')"><i class="fas fa-book"></i> Courses</button>
+                <button class="action-btn" onclick="toggleTheme()"><i class="fas fa-moon"></i> Theme</button>
+                <button class="action-btn" onclick="navigateTo('profile')"><i class="fas fa-cog"></i> Settings</button>
+                <button class="action-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h2 id="welcomeTitle"><i class="fas fa-hand-wave"></i> Welcome back!</h2>
+                    <p>Continue your learning journey</p>
+                </div>
+                <div class="academic-info">
+                    <div class="academic-item">
+                        <div class="label">College</div>
+                        <div class="value" id="infoCollege">-</div>
+                    </div>
+                    <div class="academic-item">
+                        <div class="label">Program</div>
+                        <div class="value" id="infoProgramCode">-</div>
+                    </div>
+                    <div class="academic-item">
+                        <div class="label">Year</div>
+                        <div class="value" id="infoYear">-</div>
+                    </div>
+                    <div class="academic-item">
+                        <div class="label" style="font-size:0.6rem;">Academic Year</div>
+                        <div class="value" style="font-size:0.8rem;" id="infoAcademicYear">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-comments"></i> Knowledge Commons</h3>
+                    <span class="section-link" onclick="navigateTo('knowledge')">Open</span>
+                </div>
+                <div style="padding: 0.75rem 0;">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                        Contribute to academic discussions, share insights, and engage with your peers.
+                    </p>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <div class="stat-pill">
+                            <span class="stat-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);"><i class="fas fa-question-circle"></i></span>
+                            <span>Questions</span>
+                        </div>
+                        <div class="stat-pill">
+                            <span class="stat-icon" style="background: rgba(45, 90, 123, 0.2); color: var(--primary);"><i class="fas fa-lightbulb"></i></span>
+                            <span>Explanations</span>
+                        </div>
+                        <div class="stat-pill">
+                            <span class="stat-icon" style="background: rgba(158, 124, 42, 0.2); color: var(--warning);"><i class="fas fa-book"></i></span>
+                            <span>Resources</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-book-open"></i> Continue Reading</h3>
+                    <span class="section-link" onclick="navigateTo('courses')">View All</span>
+                </div>
+                <div class="course-list" id="continueReading">
+                    <div class="empty-state"><i class="fas fa-book-open"></i><p>Start your first module</p></div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Your Modules</h3>
+                </div>
+                <div class="filters">
+                    <button class="filter-btn active" onclick="filterSemester('all')">All</button>
+                    <button class="filter-btn" onclick="filterSemester('sem1')">Semester 1</button>
+                    <button class="filter-btn" onclick="filterSemester('sem2')">Semester 2</button>
+                    <button class="filter-btn" onclick="filterSemester('year1')">Year 1</button>
+                    <button class="filter-btn" onclick="filterSemester('year2')">Year 2</button>
+                </div>
+                <div id="semesterCourses" class="course-list"></div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-clock"></i> Recent</h3>
+                </div>
+                <div class="course-list" id="recentModules">
+                    <div class="notification-item" style="display:block;text-align:center;">
+                        <p style="font-size:0.8rem;">No recent modules</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card" style="margin-top:1.25rem;">
+                <div class="section-header">
+                    <h3><i class="fas fa-bell"></i> Notifications</h3>
+                    <span class="notification-badge">3</span>
+                </div>
+                <div class="notification-list">
+                    <div class="notification-item">
+                        <div class="notification-icon new"><i class="fas fa-book"></i></div>
+                        <div class="notification-content">
+                            <h4>New module</h4>
+                            <p>Constitutional Law II - 2h ago</p>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon new"><i class="fas fa-calendar"></i></div>
+                        <div class="notification-content">
+                            <h4>Assignment due</h4>
+                            <p>Contract Law - Tomorrow</p>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon new"><i class="fas fa-star"></i></div>
+                        <div class="notification-content">
+                            <h4>Announcement</h4>
+                            <p>Exam schedule - 1d ago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const collegeDisplayNames = {
+            'cass': 'College of Arts & Social Sciences',
+            'cbe': 'College of Business & Economics',
+            'cmhs': 'College of Medicine & Health Sciences',
+            'cst': 'College of Science & Technology',
+            'caff': 'College of Agriculture & Food Sciences',
+            'ce': 'College of Education',
+            'cvas': 'College of Veterinary & Animal Sciences'
+        };
+
+        let currentUser = null;
+        let programModules = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+        });
+
+        function loadUserData() {
+            currentUser = JSON.parse(localStorage.getItem('ur_current_user') || '{}');
+            
+            if (!currentUser.onboardingComplete) {
+                window.location.href = '/onboarding';
+                return;
+            }
+
+            document.getElementById('profileName').textContent = currentUser.name || 'Student';
+            document.getElementById('profileEmail').textContent = currentUser.email || 'student@ur.ac.rw';
+            document.getElementById('userAvatar').textContent = (currentUser.name || 'U').charAt(0);
+
+            const badgeText = `${currentUser.programCode || ''}`;
+            document.getElementById('badgeText').textContent = badgeText;
+
+            const college = collegeDisplayNames[currentUser.college] || currentUser.college;
+            document.getElementById('infoCollege').textContent = college;
+            document.getElementById('infoProgramCode').textContent = currentUser.programCode || '-';
+            document.getElementById('infoYear').textContent = `Year ${currentUser.year || 1}`;
+            document.getElementById('infoAcademicYear').textContent = currentUser.academicYear || '2024-2025';
+
+            document.getElementById('welcomeTitle').innerHTML = `<i class="fas fa-hand-wave"></i> Welcome, ${currentUser.program || 'Student'}`;
+
+            fetchModules();
+        }
+
+        async function fetchModules() {
+            try {
+                // Fetch modules filtered by program and year
+                const response = await fetch(`/api/modules?program=${encodeURIComponent(currentUser.program)}&year=${currentUser.year}`);
+                const data = await response.json();
+                
+                if (data.modules) {
+                    programModules = data.modules;
+                    loadCourses(programModules);
+                } else {
+                    document.getElementById('semesterCourses').innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>No modules found for your program</p></div>';
+                }
+            } catch (e) {
+                console.error("Error fetching modules:", e);
+                document.getElementById('semesterCourses').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading modules</p></div>';
+            }
+        }
+
+        function loadCourses(courses) {
+            const viewedModules = currentUser.viewedModules || [];
+
+            // Sort by semester
+            courses.sort((a, b) => {
+                return (a.semester_name || '').localeCompare(b.semester_name || '');
+            });
+
+            const viewedCount = courses.filter(c => viewedModules.includes(c.id)).length;
+            const progress = courses.length > 0 ? Math.round((viewedCount / courses.length) * 100) : 0;
+
+            document.getElementById('progressValue').textContent = `${progress}%`;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('modulesViewed').textContent = `${viewedCount} viewed`;
+            document.getElementById('totalModules').textContent = `of ${courses.length}`;
+
+            const continueReading = document.getElementById('continueReading');
+            const viewedCourses = courses.filter(c => viewedModules.includes(c.id)).slice(0, 3);
+            
+            if (viewedCourses.length > 0) {
+                continueReading.innerHTML = viewedCourses.map(course => `
+                    <div class="course-item" onclick="openCourse(${course.id})">
+                        <div class="course-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="course-info">
+                            <div class="course-title">${course.name}</div>
+                            <div class="course-meta">
+                                <span><i class="fas fa-code"></i> ${course.module_code}</span>
+                                <span><i class="fas fa-user"></i> ${course.lecturer_name || 'Lecturer'}</span>
+                            </div>
+                        </div>
+                        <div class="course-progress">
+                            <div class="mini-progress">
+                                <div class="mini-progress-fill" style="width: ${course.progress || 50}%"></div>
+                            </div>
+                            <div class="progress-label">${course.progress || 50}%</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderSemesterCourses(courses);
+        }
+
+        function renderSemesterCourses(courses) {
+            const container = document.getElementById('semesterCourses');
+            if (courses.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>No courses found</p></div>';
+                return;
+            }
+
+            let filtered = courses;
+            // Already filtered by year from API
+
+            const grouped = {};
+            filtered.forEach(course => {
+                // Group by Semester Name (e.g., "Semester 1")
+                const semName = course.semester_name || 'General';
+                const key = `${semName} - Year ${currentUser.year}`;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(course);
+            });
+
+            container.innerHTML = Object.entries(grouped).map(([key, courses]) => `
+                <div class="semester-group">
+                    <div class="semester-header">
+                        <i class="fas fa-layer-group"></i> ${key}
+                    </div>
+                    <div class="course-list">
+                        ${courses.map(course => `
+                            <div class="course-item" onclick="openCourse(${course.id})">
+                                <div class="course-icon"><i class="fas fa-file-pdf"></i></div>
+                                <div class="course-info">
+                                    <div class="course-title">${course.name}</div>
+                                    <div class="course-meta">
+                                        <span><i class="fas fa-code"></i> ${course.module_code}</span>
+                                        <span><i class="fas fa-user"></i> ${course.lecturer_name || 'Lecturer'}</span>
+                                        <span><i class="fas fa-calendar"></i> ${course.created_at ? new Date(course.created_at).toLocaleDateString() : 'Recent'}</span>
+                                    </div>
+                                </div>
+                                <button class="action-btn download-btn" onclick="event.stopPropagation(); downloadModule(${course.id})">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterSemester(filter) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            let filtered = programModules;
+
+            if (filter === 'sem1') filtered = programModules.filter(c => c.semester_name && c.semester_name.includes('1'));
+            else if (filter === 'sem2') filtered = programModules.filter(c => c.semester_name && c.semester_name.includes('2'));
+            // Year filtering is already done by API based on profile, but if we wanted to switch years:
+            // We would need to re-fetch from API with different year parameter
+
+            renderSemesterCourses(filtered);
+        }
+
+        function openCourse(courseId) {
+            window.location.href = '/document';
+        }
+        
+        function downloadModule(courseId) {
+            // In a real app, this would trigger a download of the module's primary resource
+            alert("Downloading module resources...");
+            // window.location.href = `/api/modules/${courseId}/download`;
+        }
+
+        function navigateTo(page) {
+            if (page === 'courses') window.location.href = '/my-courses';
+            else if (page === 'knowledge') window.location.href = '/knowledge-commons';
+            else if (page === 'profile') window.location.href = '/my-profile';
+        }
+
+        function toggleTheme() {
+            alert('Theme toggle - implement in profile settings');
+        }
+
+        function logout() {
+            localStorage.removeItem('ur_current_user');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

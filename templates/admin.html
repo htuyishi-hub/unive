@@ -1385,30 +1385,32 @@
         // ==================== ANNOUNCEMENTS ====================
         async function showAnnouncements() {
             setActiveNav('announcements');
-            const modules = await apiFetch('/modules');
-            
-            document.getElementById('page-content').innerHTML = `
-                <div class="page-header">
-                    <div>
-                        <h2>Announcements</h2>
-                        <p>Post announcements for modules</p>
+            try {
+                const data = await apiFetch('/announcements');
+                const announcements = data.announcements || [];
+                
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Announcements</h2>
+                            <p>Post announcements for modules</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateAnnouncementForm()">+ New Announcement</button>
                     </div>
-                    <button class="btn btn-primary" onclick="showCreateAnnouncementForm()">+ New Announcement</button>
-                </div>
-                <div class="glass-card">
-                    <h4 style="margin-bottom: 1rem;">Recent Announcements</h4>
-                    <div class="announcement-item">
-                        <h5>Welcome to Semester 1!</h5>
-                        <p>Welcome back! All modules are now open for enrollment.</p>
-                        <small>Posted 2 days ago • General</small>
+                    <div class="glass-card">
+                        <h4 style="margin-bottom: 1rem;">Recent Announcements</h4>
+                        ${announcements.length > 0 ? announcements.map(a => `
+                            <div class="announcement-item">
+                                <h5>${a.title}</h5>
+                                <p>${a.message}</p>
+                                <small>Posted ${new Date(a.created_at).toLocaleDateString()} • ${a.category || 'General'}</small>
+                            </div>
+                        `).join('') : '<p style="color: #64748b;">No announcements yet. Create one to get started.</p>'}
                     </div>
-                    <div class="announcement-item">
-                        <h5>Midterm Exams Schedule</h5>
-                        <p>The midterm exam schedule has been published.</p>
-                        <small>Posted 1 week ago • All Modules</small>
-                    </div>
-                </div>
-            `;
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
         }
 
         function showCreateAnnouncementForm() {
@@ -1507,28 +1509,32 @@
         // ==================== GROUPS ====================
         async function showGroups() {
             setActiveNav('groups');
-            document.getElementById('page-content').innerHTML = `
-                <div class="page-header">
-                    <div>
-                        <h2>Groups</h2>
-                        <p>Manage student groups for collaborative work</p>
+            try {
+                const data = await apiFetch('/groups');
+                const groups = data.groups || [];
+                
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Groups</h2>
+                            <p>Manage student groups for collaborative work</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateGroupForm()">+ New Group</button>
                     </div>
-                    <button class="btn btn-primary" onclick="showCreateGroupForm()">+ New Group</button>
-                </div>
-                <div class="glass-card">
-                    <h4 style="margin-bottom: 1rem;">Active Groups</h4>
-                    <div class="announcement-item">
-                        <h5>Project Team Alpha</h5>
-                        <p>CS301 - Software Engineering Project • 4 members</p>
-                        <small>Created 3 days ago</small>
+                    <div class="glass-card">
+                        <h4 style="margin-bottom: 1rem;">Active Groups</h4>
+                        ${groups.length > 0 ? groups.map(g => `
+                            <div class="announcement-item">
+                                <h5>${g.name}</h5>
+                                <p>${g.module_code} - ${g.module_name} • ${g.member_count} members</p>
+                                <small>Created ${new Date(g.created_at).toLocaleDateString()}</small>
+                            </div>
+                        `).join('') : '<p style="color: #64748b;">No groups created yet.</p>'}
                     </div>
-                    <div class="announcement-item">
-                        <h5>Study Group - Room 201</h5>
-                        <p>MATH101 - Calculus Study Group • 6 members</p>
-                        <small>Created 1 week ago</small>
-                    </div>
-                </div>
-            `;
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
         }
 
         function showCreateGroupForm() {
@@ -1581,44 +1587,46 @@
         // ==================== STUDENT MAPPING ====================
         async function showStudentMapping() {
             setActiveNav('mapping');
-            document.getElementById('page-content').innerHTML = `
-                <div class="page-header">
-                    <div>
-                        <h2>Student Mapping</h2>
-                        <p>Assign students to programs, years, and semesters</p>
+            try {
+                const data = await apiFetch('/admin/students');
+                const students = data.students || [];
+                
+                document.getElementById('page-content').innerHTML = `
+                    <div class="page-header">
+                        <div>
+                            <h2>Student Mapping</h2>
+                            <p>Assign students to programs, years, and semesters</p>
+                        </div>
                     </div>
-                </div>
-                <div class="glass-card">
-                    <p style="color: #64748b; margin-bottom: 1rem;">Map students to their academic programs. This determines which modules appear on their dashboard.</p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Student</th>
-                                <th>Email</th>
-                                <th>Current Program</th>
-                                <th>Year</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>John Doe</td>
-                                <td>john@ur.ac.rw</td>
-                                <td>Computer Science</td>
-                                <td>Year 2</td>
-                                <td><button class="btn btn-primary btn-sm">Edit</button></td>
-                            </tr>
-                            <tr>
-                                <td>Jane Smith</td>
-                                <td>jane@ur.ac.rw</td>
-                                <td>Not Assigned</td>
-                                <td>-</td>
-                                <td><button class="btn btn-primary btn-sm">Assign</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            `;
+                    <div class="glass-card">
+                        <p style="color: #64748b; margin-bottom: 1rem;">Map students to their academic programs. This determines which modules appear on their dashboard.</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Email</th>
+                                    <th>Current Program</th>
+                                    <th>Year</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${students.length > 0 ? students.map(s => `
+                                    <tr>
+                                        <td>${s.name}</td>
+                                        <td>${s.email}</td>
+                                        <td>${s.program || 'Not Assigned'}</td>
+                                        <td>${s.year || '-'}</td>
+                                        <td><button class="btn btn-primary btn-sm">Edit</button></td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="5"><div class="empty-state">No students mapped yet</div></td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('page-content').innerHTML = `<p style="color: #ef4444;">Error: ${error.message}</p>`;
+            }
         }
 
         // Initialize

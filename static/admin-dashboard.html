@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - UR Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --sidebar-bg: #1e293b;
+            --sidebar-text: #e2e8f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        
+        .sidebar-header p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0;
+            overflow-y: auto;
+        }
+        
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            padding: 0 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--accent);
+        }
+        
+        .nav-item.active {
+            background: rgba(198, 153, 60, 0.1);
+            color: var(--accent);
+            border-left-color: var(--accent);
+        }
+        
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .admin-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--sidebar-bg);
+        }
+        
+        .admin-details h4 {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .admin-details p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--card-bg);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .content-area {
+            padding: 2rem;
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+        }
+        
+        .stat-card i {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            background: var(--bg);
+        }
+        
+        tr:hover {
+            background: var(--bg);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+        
+        .btn-accent {
+            background: var(--accent);
+            color: var(--sidebar-bg);
+        }
+        
+        .btn-accent:hover {
+            background: var(--accent-light);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        
+        .btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--success);
+        }
+        
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+        
+        .badge-danger {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger);
+        }
+        
+        .badge-info {
+            background: rgba(30, 64, 124, 0.1);
+            color: var(--primary);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal {
+            background: var(--card-bg);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        
+        /* Section visibility */
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        /* Progress bar */
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        
+        .tab:hover {
+            color: var(--text-main);
+        }
+        
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>⚙️ Admin Portal</h2>
+            <p>UR Hub Administration</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Overview</div>
+                <div class="nav-item active" data-section="overview">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Academic Management</div>
+                <div class="nav-item" data-section="colleges">
+                    <i class="fas fa-university"></i>
+                    <span>Colleges</span>
+                </div>
+                <div class="nav-item" data-section="programs">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Programs</span>
+                </div>
+                <a href="/admin/upload" class="nav-item" style="text-decoration: none;">
+                    <i class="fas fa-book"></i>
+                    <span>Upload Modules</span>
+                </a>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Communication</div>
+                <div class="nav-item" data-section="announcements">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Announcements</span>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Governance</div>
+                <div class="nav-item" data-section="students">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>Student Review</span>
+                </div>
+                <div class="nav-item" data-section="moderation">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Moderation</span>
+                </div>
+                <div class="nav-item" data-section="reports">
+                    <i class="fas fa-flag"></i>
+                    <span>Reports</span>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Insights</div>
+                <div class="nav-item" data-section="analytics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </div>
+                <div class="nav-item" data-section="knowledge">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Knowledge Base</span>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Account</div>
+                <div class="nav-item" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="admin-info">
+                <div class="admin-avatar" id="adminAvatar">A</div>
+                <div class="admin-details">
+                    <h4 id="adminName">Admin User</h4>
+                    <p id="adminRole">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <h1 id="pageTitle">Dashboard Overview</h1>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </header>
+        
+        <div class="content-area">
+            <!-- Overview Section -->
+            <section class="section active" id="section-overview">
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <div class="value" id="statStudents">-</div>
+                        <div class="label">Total Students</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-book"></i>
+                        <div class="value" id="statModules">-</div>
+                        <div class="label">Total Modules</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-comments"></i>
+                        <div class="value" id="statPosts">-</div>
+                        <div class="label">Total Posts</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-user-shield"></i>
+                        <div class="value" id="statPending">-</div>
+                        <div class="label">Pending Approvals</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recent Activity</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Activity</th>
+                                        <th>Details</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentActivity">
+                                    <tr>
+                                        <td colspan="3" class="loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading activity...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Colleges Section -->
+            <section class="section" id="section-colleges">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Managed Colleges</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="collegesTable">
+                                    <tr>
+                                        <td colspan="4" class="loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading colleges...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Programs Section -->
+            <section class="section" id="section-programs">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Managed Programs</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>College</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="programsTable">
+                                    <tr>
+                                        <td colspan="4" class="loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading programs...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Modules Section -->
+            <section class="section" id="section-modules">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Upload Module</h3>
+                        <a href="/admin/upload" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                            <i class="fas fa-plus"></i> New Module
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Year</th>
+                                        <th>Semester</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modulesTable">
+                                    <tr>
+                                        <td colspan="5" class="loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading modules...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Announcements Section -->
+            <section class="section" id="section-announcements">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Announcements</h3>
+                        <button class="btn btn-primary btn-sm" onclick="showAnnouncementModal()">
+                            <i class="fas fa-plus"></i> New Announcement
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Scope</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="announcementsTable">
+                                    <tr>
+                                        <td colspan="4" class="loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading announcements...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Students Section -->
+            <section class="section" id="section-students">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Pending Student Approvals</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Program</th>
+                                        <th>Year</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTable">
+                                    <tr>
+                                        <td colspan="5" class="loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading students...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Moderation Section -->
+            <section class="section" id="section-moderation">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Content Moderation</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle"></i>
+                            <p>All content is currently in good standing.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Reports Section -->
+            <section class="section" id="section-reports">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Pending Reports</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Content</th>
+                                        <th>Reason</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportsTable">
+                                    <tr>
+                                        <td colspan="4" class="loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading reports...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Analytics Section -->
+            <section class="section" id="section-analytics">
+                <div class="stats-grid" id="analyticsStats">
+                    <div class="stat-card">
+                        <i class="fas fa-comments"></i>
+                        <div class="value" id="analyticsPosts">-</div>
+                        <div class="label">Total Posts</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-reply"></i>
+                        <div class="value" id="analyticsComments">-</div>
+                        <div class="label">Total Comments</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Most Discussed Courses</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="topCourses"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Top Contributors</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Posts</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topContributors"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Knowledge Section -->
+            <section class="section" id="section-knowledge">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Knowledge Consolidation</h3>
+                        <button class="btn btn-accent btn-sm" onclick="mergePosts()">
+                            <i class="fas fa-code-branch"></i> Merge Posts
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="empty-state">
+                            <i class="fas fa-lightbulb"></i>
+                            <p>Convert high-quality discussions into permanent knowledge articles.</p>
+                            <button class="btn btn-primary" style="margin-top: 1rem;">
+                                <i class="fas fa-plus"></i> Create Knowledge Article
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Settings Section -->
+            <section class="section" id="section-settings">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Admin Profile</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Admin Role</label>
+                            <input type="text" id="settingRole" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Scope</label>
+                            <input type="text" id="settingScope" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <input type="text" id="settingStatus" readonly>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- Announcement Modal -->
+    <div class="modal-overlay" id="announcementModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Create Announcement</h3>
+                <button class="modal-close" onclick="closeModal('announcementModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="createAnnouncement(event)">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" id="announcementTitle" placeholder="Announcement title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Scope *</label>
+                        <select id="announcementScope" required onchange="updateScopeFields()">
+                            <option value="university">Entire University</option>
+                            <option value="college">Specific College</option>
+                            <option value="program">Specific Program</option>
+                            <option value="year">Specific Year</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="scopeCollegeGroup" style="display: none;">
+                        <label>College</label>
+                        <select id="announcementCollege">
+                            <option value="">Select College</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="scopeProgramGroup" style="display: none;">
+                        <label>Program</label>
+                        <select id="announcementProgram">
+                            <option value="">Select Program</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Content *</label>
+                        <textarea id="announcementContent" rows="5" placeholder="Announcement content" required></textarea>
+                    </div>
+                    <div class="modal-footer" style="padding: 0; border: none; margin-top: 1rem;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('announcementModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Publish</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Extract token from URL if present
+        function extractTokenFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            if (token) {
+                localStorage.setItem('ur_admin_token', token);
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return token;
+            }
+            return localStorage.getItem('ur_admin_token');
+        }
+        let authToken = localStorage.getItem('ur_admin_token');
+        let adminProfile = null;
+        
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const section = item.dataset.section;
+                if (section) {
+                    navigateTo(section);
+                }
+            });
+        });
+        
+        function navigateTo(section) {
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.querySelector(`.nav-item[data-section="${section}"]`).classList.add('active');
+            
+            // Update sections
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`section-${section}`).classList.add('active');
+            
+            // Update title
+            const titles = {
+                overview: 'Dashboard Overview',
+                colleges: 'College Management',
+                programs: 'Program Management',
+                modules: 'Module Upload',
+                announcements: 'Announcements',
+                students: 'Student Review',
+                moderation: 'Content Moderation',
+                reports: 'Report Handling',
+                analytics: 'Analytics & Insights',
+                knowledge: 'Knowledge Base',
+                settings: 'Admin Settings'
+            };
+            document.getElementById('pageTitle').textContent = titles[section] || 'Admin Dashboard';
+            
+            // Load section data
+            loadSection(section);
+        }
+        
+        function loadSection(section) {
+            switch(section) {
+                case 'overview': loadOverview(); break;
+                case 'colleges': loadColleges(); break;
+                case 'programs': loadPrograms(); break;
+                case 'modules': loadModules(); break;
+                case 'announcements': loadAnnouncements(); break;
+                case 'students': loadStudents(); break;
+                case 'reports': loadReports(); break;
+                case 'analytics': loadAnalytics(); break;
+                case 'settings': loadSettings(); break;
+            }
+        }
+        
+        async function apiRequest(endpoint, method = 'GET', body = null) {
+            try {
+                const headers = { 'Authorization': `Bearer ${authToken}` };
+                if (body) headers['Content-Type'] = 'application/json';
+                
+                const response = await fetch(endpoint, {
+                    method,
+                    headers,
+                    body: body ? JSON.stringify(body) : null
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    logout();
+                    return null;
+                }
+                
+                return await response.json();
+            } catch (e) {
+                console.error('API Error:', e);
+                return null;
+            }
+        }
+        
+        async function loadAdminProfile() {
+            const profile = await apiRequest('/api/admin/profile');
+            if (profile) {
+                adminProfile = profile;
+                document.getElementById('adminName').textContent = profile.name || profile.email;
+                document.getElementById('adminRole').textContent = profile.admin_role_name || 'Admin';
+                document.getElementById('adminAvatar').textContent = (profile.name || profile.email).charAt(0).toUpperCase();
+            }
+        }
+        
+        async function loadOverview() {
+            const stats = await apiRequest('/api/admin/overview');
+            if (stats) {
+                document.getElementById('statStudents').textContent = stats.total_students || 0;
+                document.getElementById('statModules').textContent = stats.total_modules || 0;
+                document.getElementById('statPosts').textContent = stats.total_posts || 0;
+                document.getElementById('statPending').textContent = stats.pending_approvals || 0;
+            }
+        }
+        
+        async function loadColleges() {
+            const colleges = await apiRequest('/api/admin/colleges');
+            const tbody = document.getElementById('collegesTable');
+            if (colleges && colleges.length) {
+                tbody.innerHTML = colleges.map(c => `
+                    <tr>
+                        <td>${c.code}</td>
+                        <td>${c.name}</td>
+                        <td>${c.description || '-'}</td>
+                        <td>
+                            <button class="btn btn-outline btn-sm">View</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No colleges found</td></tr>';
+            }
+        }
+        
+        async function loadPrograms() {
+            const programs = await apiRequest('/api/admin/programs');
+            const tbody = document.getElementById('programsTable');
+            if (programs && programs.length) {
+                tbody.innerHTML = programs.map(p => `
+                    <tr>
+                        <td>${p.code}</td>
+                        <td>${p.name}</td>
+                        <td>${p.college_id}</td>
+                        <td>
+                            <button class="btn btn-outline btn-sm">View</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No programs found</td></tr>';
+            }
+        }
+        
+        async function loadModules() {
+            const modules = await apiRequest('/api/admin/modules');
+            const tbody = document.getElementById('modulesTable');
+            if (modules && modules.length) {
+                tbody.innerHTML = modules.map(m => `
+                    <tr>
+                        <td>${m.code}</td>
+                        <td>${m.name}</td>
+                        <td>Year ${m.year}</td>
+                        <td>Semester ${m.semester}</td>
+                        <td>
+                            <button class="btn btn-outline btn-sm">Edit</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No modules found</td></tr>';
+            }
+        }
+        
+        async function loadAnnouncements() {
+            const announcements = await apiRequest('/api/admin/announcements');
+            const tbody = document.getElementById('announcementsTable');
+            if (announcements && announcements.length) {
+                tbody.innerHTML = announcements.map(a => `
+                    <tr>
+                        <td>${a.title}</td>
+                        <td><span class="badge badge-info">${a.scope}</span></td>
+                        <td>${new Date(a.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-outline btn-sm">View</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No announcements</td></tr>';
+            }
+        }
+        
+        async function loadStudents() {
+            const students = await apiRequest('/api/admin/students/pending');
+            const tbody = document.getElementById('studentsTable');
+            if (students && students.length) {
+                tbody.innerHTML = students.map(s => `
+                    <tr>
+                        <td>${s.name}</td>
+                        <td>${s.email}</td>
+                        <td>${s.program || '-'}</td>
+                        <td>${s.year_of_study || '-'}</td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="approveStudent(${s.id})">Approve</button>
+                            <button class="btn btn-danger btn-sm" onclick="flagStudent(${s.id})">Flag</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No pending approvals</td></tr>';
+            }
+        }
+        
+        async function loadReports() {
+            const reports = await apiRequest('/api/admin/reports/pending');
+            const tbody = document.getElementById('reportsTable');
+            if (reports && reports.length) {
+                tbody.innerHTML = reports.map(r => `
+                    <tr>
+                        <td>${r.report_type}</td>
+                        <td>${r.content_type} #${r.content_id}</td>
+                        <td>${r.reason}</td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="resolveReport(${r.id}, 'resolved')">Resolve</button>
+                            <button class="btn btn-danger btn-sm" onclick="resolveReport(${r.id}, 'dismissed')">Dismiss</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No pending reports</td></tr>';
+            }
+        }
+        
+        async function loadAnalytics() {
+            const analytics = await apiRequest('/api/admin/analytics');
+            if (analytics) {
+                document.getElementById('analyticsPosts').textContent = analytics.total_posts || 0;
+                document.getElementById('analyticsComments').textContent = analytics.total_comments || 0;
+                
+                // Top courses
+                const topCourses = document.getElementById('topCourses');
+                if (analytics.top_courses && analytics.top_courses.length) {
+                    topCourses.innerHTML = analytics.top_courses.map((c, i) => `
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                            <span style="font-weight: 600; color: var(--text-muted);">#${i+1}</span>
+                            <span style="flex: 1;">${c.program || 'Unknown'}</span>
+                            <span style="color: var(--accent); font-weight: 600;">${c.count} posts</span>
+                        </div>
+                    `).join('');
+                } else {
+                    topCourses.innerHTML = '<p class="empty-state">No data available</p>';
+                }
+                
+                // Top contributors
+                const contributors = document.getElementById('topContributors');
+                if (analytics.top_contributors && analytics.top_contributors.length) {
+                    contributors.innerHTML = analytics.top_contributors.map(c => `
+                        <tr>
+                            <td>${c.user_name || 'Anonymous'}</td>
+                            <td>${c.count}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    contributors.innerHTML = '<tr><td colspan="2" class="empty-state">No data available</td></tr>';
+                }
+            }
+        }
+        
+        async function loadSettings() {
+            if (adminProfile) {
+                document.getElementById('settingRole').value = adminProfile.admin_role_name || adminProfile.admin_role;
+                document.getElementById('settingScope').value = adminProfile.scope?.type || 'N/A';
+                document.getElementById('settingStatus').value = adminProfile.admin_status || 'Active';
+            }
+        }
+        
+        function showAnnouncementModal() {
+            document.getElementById('announcementModal').classList.add('show');
+            loadCollegesForSelect('announcementCollege');
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+        
+        async function loadCollegesForSelect(targetId = 'moduleCollege') {
+            const colleges = await apiRequest('/api/admin/colleges');
+            const select = document.getElementById(targetId);
+            if (colleges) {
+                select.innerHTML = '<option value="">Select College</option>' +
+                    colleges.map(c => `<option value="${c.id}">${c.code} - ${c.name}</option>`).join('');
+            }
+        }
+        
+        async function createAnnouncement(e) {
+            e.preventDefault();
+            const data = {
+                title: document.getElementById('announcementTitle').value,
+                content: document.getElementById('announcementContent').value,
+                scope: document.getElementById('announcementScope').value,
+                college_id: document.getElementById('announcementCollege').value ? parseInt(document.getElementById('announcementCollege').value) : null,
+                program: document.getElementById('announcementProgram').value || null
+            };
+            
+            const result = await apiRequest('/api/admin/announcements', 'POST', data);
+            if (result) {
+                alert('Announcement published!');
+                closeModal('announcementModal');
+                loadAnnouncements();
+            } else {
+                alert('Failed to create announcement');
+            }
+        }
+        
+        async function approveStudent(id) {
+            if (confirm('Approve this student?')) {
+                const result = await apiRequest(`/api/admin/students/${id}/approve`, 'POST');
+                if (result) {
+                    loadStudents();
+                }
+            }
+        }
+        
+        async function flagStudent(id) {
+            const reason = prompt('Reason for flagging:');
+            if (reason) {
+                const result = await apiRequest(`/api/admin/students/${id}/flag`, 'POST', { reason });
+                if (result) {
+                    loadStudents();
+                }
+            }
+        }
+        
+        async function resolveReport(id, action) {
+            const notes = action === 'resolved' ? prompt('Resolution notes (optional):') : 'Dismissed by admin';
+            const result = await apiRequest(`/api/admin/reports/${id}/resolve`, 'POST', { action, notes });
+            if (result) {
+                loadReports();
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('ur_admin_token');
+            localStorage.removeItem('ur_admin_user');
+            window.location.href = '/';
+        }
+        
+        function mergePosts() {
+            alert('Select posts to merge into a knowledge article');
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            authToken = extractTokenFromUrl();
+            if (!authToken) {
+                window.location.href = '/';
+                return;
+            }
+            await loadAdminProfile();
+            loadOverview();
+        });
+    </script>
+</body>
+</html>

@@ -297,7 +297,47 @@ def login_password():
             'name': user.name,
             'role': user.role
         },
-        'access_token': access_token
+        'token': access_token  # Also return as 'token' for compatibility
+    }), 200
+
+
+@auth_bp.route('/admin-login', methods=['POST'])
+def admin_login():
+    """
+    Admin-specific login endpoint
+    """
+    data = request.get_json()
+    
+    if not data.get('email') or not data.get('password'):
+        return jsonify({'error': 'Email and password required'}), 400
+    
+    user = User.query.filter_by(email=data['email']).first()
+    
+    if not user:
+        return jsonify({'error': 'Invalid credentials'}), 401
+    
+    # Check if user is admin
+    if user.role != 'admin':
+        return jsonify({'error': 'Access denied. Admin privileges required.'}), 403
+    
+    # Check password
+    if not user.check_password(data['password']):
+        return jsonify({'error': 'Invalid credentials'}), 401
+    
+    if not user.is_active:
+        return jsonify({'error': 'Account is disabled'}), 403
+    
+    access_token = generate_token(user.id, 'access')
+    
+    return jsonify({
+        'message': 'Admin login successful',
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'name': user.name,
+            'role': user.role
+        },
+        'token': access_token
     }), 200
 
 

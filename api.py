@@ -194,6 +194,115 @@ def get_academic_years():
         } for y in years]
     }), 200
 
+@api_bp.route('/academic-years/<int:year_id>', methods=['GET'])
+def get_academic_year(year_id):
+    """Get academic year details with semesters"""
+    year = AcademicYear.query.get_or_404(year_id)
+    semesters = Semester.query.filter_by(academic_year_id=year.id).all()
+    
+    return jsonify({
+        'academic_year': {
+            'id': year.id,
+            'year_code': year.year_code,
+            'name': year.name,
+            'start_date': year.start_date.isoformat() if year.start_date else None,
+            'end_date': year.end_date.isoformat() if year.end_date else None,
+            'is_active': year.is_active,
+            'is_completed': year.is_completed
+        },
+        'semesters': [{
+            'id': s.id,
+            'name': s.name,
+            'code': s.code,
+            'start_date': s.start_date.isoformat() if s.start_date else None,
+            'end_date': s.end_date.isoformat() if s.end_date else None
+        } for s in semesters]
+    }), 200
+
+
+@api_bp.route('/academic-years', methods=['POST'])
+@admin_required
+def create_academic_year(user):
+    """Create new academic year"""
+    data = request.get_json()
+    required = ['year_code', 'name', 'start_date', 'end_date']
+    for field in required:
+        if not data.get(field):
+            return jsonify({'error': f'{field} required'}), 400
+    
+    # Check if exists
+    if AcademicYear.query.filter_by(year_code=data['year_code']).first():
+        return jsonify({'error': 'Academic year already exists'}), 400
+    
+    year = AcademicYear(
+        year_code=data['year_code'],
+        name=data['name'],
+        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date(),
+        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').date(),
+        is_active=False
+    )
+    
+    db.session.add(year)
+    db.session.commit()
+    
+    # Add default semesters
+    sem1 = Semester(
+        academic_year_id=year.id,
+        name="Semester 1",
+        code=f"{data['year_code'][-2:]}S1",
+        start_date=year.start_date,
+        end_date=datetime.strptime(f"{year.start_date.year}-01-15", '%Y-%m-%d').date()
+    )
+    sem2 = Semester(
+        academic_year_id=year.id,
+        name="Semester 2",
+        code=f"{data['year_code'][-2:]}S2",
+        start_date=datetime.strptime(f"{year.start_date.year}-01-16", '%Y-%m-%d').date(),
+        end_date=year.end_date
+    )
+    
+    db.session.add_all([sem1, sem2])
+    db.session.commit()
+    
+    log_activity(user.id, 'create_academic_year', request.remote_addr)
+    
+    return jsonify({
+        'message': 'Academic year created',
+        'academic_year': {'id': year.id, 'year_code': year.year_code, 'name': year.name}
+    }), 201
+
+
+@api_bp.route('/academic-years/<int:year_id>/activate', methods=['POST'])
+@admin_required
+def activate_year(user, year_id):
+    """Activate an academic year"""
+    # Deactivate current active year
+    current = AcademicYear.query.filter_by(is_active=True).first()
+    if current:
+        current.is_active = False
+    
+    year = AcademicYear.query.get_or_404(year_id)
+    year.is_active = True
+    db.session.commit()
+    
+    log_activity(user.id, 'activate_academic_year', request.remote_addr)
+    
+    return jsonify({'message': 'Academic year activated'}), 200
+
+
+@api_bp.route('/academic-years/<int:year_id>/complete', methods=['POST'])
+@admin_required
+def complete_year(user, year_id):
+    """Mark academic year as completed"""
+    year = AcademicYear.query.get_or_404(year_id)
+    year.is_completed = True
+    year.is_active = False
+    db.session.commit()
+    
+    log_activity(user.id, 'complete_academic_year', request.remote_addr)
+    
+    return jsonify({'message': 'Academic year completed'}), 200
+
 
 @api_bp.route('/academic-years/active', methods=['GET'])
 def get_active_academic_year():

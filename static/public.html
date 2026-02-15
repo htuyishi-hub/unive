@@ -52,6 +52,7 @@
         .header-nav {
             display: flex;
             gap: 1.5rem;
+            align-items: center;
         }
 
         .header-nav a {
@@ -59,10 +60,25 @@
             text-decoration: none;
             cursor: pointer;
             transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .header-nav a:hover, .header-nav a.active {
             color: var(--accent);
+        }
+
+        .header-nav a.hub-link {
+            background: linear-gradient(135deg, var(--accent), #1E3A2F);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+
+        .header-nav a.hub-link:hover {
+            background: linear-gradient(135deg, #1E3A2F, var(--accent));
+            -webkit-background-clip: text;
         }
 
         .user-menu {
@@ -139,6 +155,297 @@
         /* Main Feed */
         .main-feed {
             min-width: 0;
+        }
+
+        /* UR Hub Social Stream Styles */
+        .ur-hub-container {
+            background: #F5F6F7;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .ur-hub-container .posting-box {
+            background: white;
+            border-bottom: 1px solid #E4E6E8;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .ur-hub-container .posting-header {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .ur-hub-container .avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .ur-hub-container #postInput {
+            flex: 1;
+            border: none;
+            resize: none;
+            font-size: 16px;
+            line-height: 1.6;
+            font-family: inherit;
+            color: #1F1F1F;
+            outline: none;
+            min-height: 60px;
+            max-height: 150px;
+            background: transparent;
+        }
+
+        .ur-hub-container #postInput::placeholder {
+            color: #6B6F76;
+        }
+
+        .ur-hub-container .posting-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #E4E6E8;
+        }
+
+        .ur-hub-container .image-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #0E1A2B;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 20px;
+            transition: background-color 0.2s ease;
+            font-size: 14px;
+        }
+
+        .ur-hub-container .image-btn:hover {
+            background-color: rgba(14, 26, 43, 0.08);
+        }
+
+        .ur-hub-container .post-btn {
+            background-color: #0E1A2B;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .ur-hub-container .post-btn:hover {
+            opacity: 0.9;
+        }
+
+        .ur-hub-container .post {
+            background: white;
+            padding: 16px;
+            border-bottom: 1px solid #E4E6E8;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .ur-hub-container .post:hover {
+            background-color: #FAFAFA;
+        }
+
+        .ur-hub-container .identity-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .ur-hub-container .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .ur-hub-container .identity-info {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.3;
+        }
+
+        .ur-hub-container .name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1F1F1F;
+        }
+
+        .ur-hub-container .faculty {
+            font-size: 13px;
+            color: #6B6F76;
+        }
+
+        .ur-hub-container .dot {
+            color: #6B6F76;
+            font-size: 12px;
+            margin: 0 2px;
+        }
+
+        .ur-hub-container .timestamp {
+            font-size: 13px;
+            color: #6B6F76;
+        }
+
+        .ur-hub-container .content-wrapper {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .ur-hub-container .expand-btn {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #0E1A2B;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+
+        .ur-hub-container .post.has-overflow .expand-btn {
+            opacity: 1;
+        }
+
+        .ur-hub-container .expand-btn:hover {
+            background-color: rgba(14, 26, 43, 0.08);
+        }
+
+        .ur-hub-container .expand-btn svg {
+            transition: transform 0.2s ease;
+        }
+
+        .ur-hub-container .post.expanded .expand-btn svg {
+            transform: rotate(180deg);
+        }
+
+        .ur-hub-container .content {
+            flex: 1;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #1F1F1F;
+            overflow: hidden;
+        }
+
+        .ur-hub-container .content p {
+            margin: 0;
+        }
+
+        .ur-hub-container .content p + p {
+            margin-top: 8px;
+        }
+
+        .ur-hub-container .post:not(.expanded) .content {
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            position: relative;
+        }
+
+        .ur-hub-container .post:not(.expanded).has-overflow .content::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, white);
+            pointer-events: none;
+        }
+
+        .ur-hub-container .image-container {
+            margin-bottom: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #F5F6F7;
+        }
+
+        .ur-hub-container .post-image {
+            width: 100%;
+            max-height: 420px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ur-hub-container .action-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 32px;
+        }
+
+        .ur-hub-container .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #6B6F76;
+            font-size: 13px;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .ur-hub-container .action-btn svg {
+            flex-shrink: 0;
+        }
+
+        .ur-hub-container .action-btn:hover {
+            background-color: rgba(14, 26, 43, 0.08);
+            color: #0E1A2B;
+        }
+
+        .ur-hub-container .action-btn.active {
+            color: #0E1A2B;
+        }
+
+        .ur-hub-container .action-btn.active svg {
+            fill: #0E1A2B;
+        }
+
+        .ur-hub-container .follow-btn {
+            margin-left: auto;
+            font-weight: 600;
+        }
+
+        .ur-hub-container .follow-btn.following {
+            background-color: #0E1A2B;
+            color: white;
+        }
+
+        .ur-hub-container .follow-btn.following:hover {
+            background-color: rgba(14, 26, 43, 0.08);
+            color: #0E1A2B;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .ur-hub-container .post {
+            animation: fadeIn 0.3s ease;
         }
 
         /* Create Post */
@@ -494,6 +801,7 @@
                 🔔 Notifications
                 <span class="notification-badge" id="notif-count" style="display: none;">0</span>
             </a>
+            <a onclick="loadURHub()" class="hub-link" id="nav-hub" style="cursor: pointer;">⚡ UR Hub</a>
         </nav>
         <div class="user-menu">
             <div id="user-info" style="display: none;">
@@ -530,7 +838,7 @@
         </aside>
 
         <!-- Main Feed -->
-        <main class="main-feed">
+        <main class="main-feed" id="main-feed">
             <!-- Admin Controls (visible to admins) -->
             <div class="admin-controls" id="admin-controls" style="display: none;">
                 <h4>⚠️ Admin Controls</h4>
@@ -542,48 +850,56 @@
                 </div>
             </div>
 
-            <!-- Create Post -->
-            <div class="create-post" id="create-post" style="display: none;">
-                <textarea id="post-content" placeholder="What's on your mind? Share your ideas, questions, or study tips!"></textarea>
-                <div class="post-actions">
-                    <div class="post-attachments">
-                        <label>📷 Photo</label>
-                        <label>📎 File</label>
-                        <label>🎥 Video</label>
-                        <label>📍 Location</label>
-                    </div>
-                    <button class="btn btn-primary" onclick="createPost()">Post</button>
-                </div>
+            <!-- UR Hub Social Stream -->
+            <div class="ur-hub-stream" id="ur-hub-stream">
+                <!-- UR Hub will be loaded here when selected -->
             </div>
 
-            <!-- Posts Feed -->
-            <div id="posts-feed">
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="post-avatar">A</div>
-                        <div class="post-meta">
-                            <h4>Admin <span class="admin-badge">ADMIN</span></h4>
-                            <span>2 hours ago</span>
+            <!-- Standard Posts Feed (shown by default) -->
+            <div id="posts-feed" class="standard-feed">
+                <!-- Create Post -->
+                <div class="create-post" id="create-post" style="display: none;">
+                    <textarea id="post-content" placeholder="What's on your mind? Share your ideas, questions, or study tips!"></textarea>
+                    <div class="post-actions">
+                        <div class="post-attachments">
+                            <label>📷 Photo</label>
+                            <label>📎 File</label>
+                            <label>🎥 Video</label>
+                            <label>📍 Location</label>
                         </div>
+                        <button class="btn btn-primary" onclick="createPost()">Post</button>
                     </div>
-                    <div class="post-content">
-                        <p>🎉 Welcome to UR Public - Your Social Learning Network!</p>
-                        <p>Connect with fellow students, share study tips, ask questions, and make new friends from all colleges across the University of Rwanda.</p>
-                        <p><strong>Rules:</strong></p>
-                        <p>1. Be respectful and supportive</p>
-                        <p>2. No spam or promotional content</p>
-                        <p>3. Share relevant study materials</p>
-                        <p>4. Help your fellow students succeed!</p>
-                    </div>
-                    <div class="post-stats">
-                        <span>❤️ 24 likes</span>
-                        <span>💬 8 comments</span>
-                        <span>🔄 5 shares</span>
-                    </div>
-                    <div class="post-actions-bar">
-                        <button onclick="likePost(this)">❤️ Like</button>
-                        <button onclick="toggleComments(this)">💬 Comment</button>
-                        <button>🔄 Share</button>
+                </div>
+
+                <!-- Posts -->
+                <div id="posts-feed-content">
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-avatar">A</div>
+                            <div class="post-meta">
+                                <h4>Admin <span class="admin-badge">ADMIN</span></h4>
+                                <span>2 hours ago</span>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            <p>🎉 Welcome to UR Public - Your Social Learning Network!</p>
+                            <p>Connect with fellow students, share study tips, ask questions, and make new friends from all colleges across the University of Rwanda.</p>
+                            <p><strong>Rules:</strong></p>
+                            <p>1. Be respectful and supportive</p>
+                            <p>2. No spam or promotional content</p>
+                            <p>3. Share relevant study materials</p>
+                            <p>4. Help your fellow students succeed!</p>
+                        </div>
+                        <div class="post-stats">
+                            <span>❤️ 24 likes</span>
+                            <span>💬 8 comments</span>
+                            <span>🔄 5 shares</span>
+                        </div>
+                        <div class="post-actions-bar">
+                            <button onclick="likePost(this)">❤️ Like</button>
+                            <button onclick="toggleComments(this)">💬 Comment</button>
+                            <button>🔄 Share</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -655,6 +971,137 @@
             checkAuth();
             loadSamplePosts();
         });
+
+        // UR Hub Functions
+        let hubLoaded = false;
+        
+        function loadURHub() {
+            if (hubLoaded) return;
+            
+            const stream = document.getElementById('ur-hub-stream');
+            if (!stream) return;
+            
+            // Fetch the social knowledge page content
+            fetch('social-knowledge.html')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Get the main content
+                    const mainContent = doc.querySelector('.main-container').innerHTML;
+                    
+                    stream.innerHTML = `
+                        <div class="ur-hub-container">
+                            ${mainContent}
+                        </div>
+                    `;
+                    
+                    // Hide standard feed and sidebar
+                    document.getElementById('posts-feed').style.display = 'none';
+                    document.querySelector('.sidebar-left').style.display = 'none';
+                    document.querySelector('.sidebar-right').style.display = 'none';
+                    
+                    // Update navigation
+                    document.querySelectorAll('.header-nav a').forEach(a => a.classList.remove('active'));
+                    document.getElementById('nav-hub').classList.add('active');
+                    
+                    // Initialize posts
+                    initializeHubPosts();
+                    
+                    hubLoaded = true;
+                })
+                .catch(err => console.error('Error loading UR Hub:', err));
+        }
+
+        function initializeHubPosts() {
+            // Initialize expand buttons
+            const expandBtns = document.querySelectorAll('.ur-hub-container .expand-btn');
+            expandBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const post = this.closest('.post');
+                    const content = post.querySelector('.content');
+                    
+                    if (post.classList.contains('expanded')) {
+                        post.classList.remove('expanded');
+                        content.style.maxHeight = 'none';
+                    } else {
+                        post.classList.add('expanded');
+                        content.style.maxHeight = 'none';
+                    }
+                });
+            });
+
+            // Detect overflow
+            document.querySelectorAll('.ur-hub-container .post').forEach(post => {
+                detectOverflow(post);
+            });
+
+            // Initialize action buttons
+            initializeHubActions();
+        }
+
+        function detectOverflow(post) {
+            const content = post.querySelector('.content');
+            if (!content) return;
+            
+            const originalStyle = content.style.cssText;
+            content.style.maxHeight = 'none';
+            
+            const isOverflowing = content.scrollHeight > content.clientHeight;
+            
+            content.style.cssText = originalStyle;
+            
+            if (isOverflowing) {
+                post.classList.add('has-overflow');
+            }
+        }
+
+        function initializeHubActions() {
+            // Comment buttons
+            document.querySelectorAll('.ur-hub-container .action-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const span = this.querySelector('span');
+                    const svg = this.querySelector('svg');
+                    
+                    if (this.classList.contains('active')) {
+                        this.classList.remove('active');
+                        svg.style.fill = '';
+                        svg.style.stroke = '';
+                        span.textContent = parseInt(span.textContent) - 1;
+                    } else {
+                        this.classList.add('active');
+                        svg.style.fill = '#0E1A2B';
+                        svg.style.stroke = '#0E1A2B';
+                        span.textContent = parseInt(span.textContent) + 1;
+                    }
+                });
+            });
+
+            // Follow buttons
+            document.querySelectorAll('.ur-hub-container .follow-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (this.classList.contains('following')) {
+                        this.classList.remove('following');
+                        this.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg><span>Follow</span>`;
+                    } else {
+                        this.classList.add('following');
+                        this.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Following</span>`;
+                    }
+                });
+            });
+        }
+
+        function unloadURHub() {
+            document.getElementById('posts-feed').style.display = 'block';
+            document.querySelector('.sidebar-left').style.display = 'block';
+            document.querySelector('.sidebar-right').style.display = 'block';
+            document.getElementById('ur-hub-stream').innerHTML = '';
+            hubLoaded = false;
+        }
 
         function checkAuth() {
             const adminToken = localStorage.getItem('ur_admin_token');
@@ -817,6 +1264,7 @@
         }
 
         function showFeed() {
+            unloadURHub();
             document.querySelectorAll('.header-nav a').forEach(a => a.classList.remove('active'));
             document.getElementById('nav-feed').classList.add('active');
         }

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Courses - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--header-bg);
+            padding: 0.85rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-nav a:hover, .header-nav a.active {
+            color: var(--accent);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Academic Badge */
+        .academic-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+            padding: 0.4rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        /* Search and Filters Bar */
+        .filters-bar {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 280px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.65rem 1rem 0.65rem 2.5rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-right: 0.25rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem 0.5rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Results Count */
+        .results-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .results-count {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .results-count strong {
+            color: var(--accent);
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .view-btn {
+            padding: 0.4rem 0.6rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Course Grid */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .course-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            cursor: pointer;
+        }
+
+        .course-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .course-banner {
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .course-banner i {
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .course-status {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .course-status.new {
+            background: var(--accent);
+            color: white;
+        }
+
+        .course-status.viewed {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .course-body {
+            padding: 1rem;
+        }
+
+        .course-code {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .course-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .course-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .course-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .course-description {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .course-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .course-lecturer {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .lecturer-avatar {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .lecturer-name {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .course-action {
+            padding: 0.4rem 0.75rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .course-action:hover {
+            background: var(--accent-light);
+        }
+
+        /* Semester Group */
+        .semester-group {
+            margin-bottom: 2rem;
+        }
+
+        .semester-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--header-bg);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--accent);
+        }
+
+        .semester-header h3 {
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .semester-header i {
+            color: var(--accent);
+        }
+
+        .semester-count {
+            margin-left: auto;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: var(--bg);
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--header-bg);
+            border-radius: 12px;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .page-btn {
+            padding: 0.5rem 0.85rem;
+            background: var(--header-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover, .page-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* List View */
+        .courses-grid.list-view {
+            grid-template-columns: 1fr;
+        }
+
+        .courses-grid.list-view .course-card {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .courses-grid.list-view .course-banner {
+            width: 120px;
+            min-height: 100%;
+            border-radius: 0;
+        }
+
+        .courses-grid.list-view .course-body {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .courses-grid.list-view .course-info {
+            flex: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .filters-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                flex-wrap: wrap;
+            }
+
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1 onclick="window.location.href='student-dashboard.html'">
+            <i class="fas fa-university"></i> UR Open Courseware
+        </h1>
+        <nav class="header-nav">
+            <a href="student-dashboard.html" onclick="navigateTo('dashboard')">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="student-courses.html" class="active" onclick="navigateTo('courses')">
+                <i class="fas fa-book"></i> My Courses
+            </a>
+            <a href="student-profile.html" onclick="navigateTo('profile')">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <div class="user-avatar" onclick="logout()">U</div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="page-header">
+            <h1><i class="fas fa-book-open"></i> My Courses</h1>
+            <p>Access and manage your learning materials</p>
+            <div class="academic-badge" id="academicBadge">
+                <i class="fas fa-graduation-cap"></i>
+                <span id="badgeText">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="filters-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search courses, modules, or topics..." onkeyup="handleSearch()">
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Year:</span>
+                <select class="filter-select" id="yearFilter" onchange="applyFilters()">
+                    <option value="all">All Years</option>
+                    <option value="1">Year 1</option>
+                    <option value="2">Year 2</option>
+                    <option value="3">Year 3</option>
+                    <option value="4">Year 4</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Semester:</span>
+                <select class="filter-select" id="semesterFilter" onchange="applyFilters()">
+                    <option value="all">All Semesters</option>
+                    <option value="1">Semester 1</option>
+                    <option value="2">Semester 2</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Sort:</span>
+                <select class="filter-select" id="sortFilter" onchange="applyFilters()">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="title">Title A-Z</option>
+                    <option value="views">Most Viewed</option>
+                </select>
+            </div>
+
+            <div class="view-toggle">
+                <button class="view-btn active" onclick="setView('grid')" title="Grid View">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button class="view-btn" onclick="setView('list')" title="List View">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Info -->
+        <div class="results-info">
+            <span class="results-count">Showing <strong id="resultsCount">0</strong> modules</span>
+        </div>
+
+        <!-- Courses Container -->
+        <div id="coursesContainer">
+            <!-- Content loaded dynamically -->
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination">
+            <button class="page-btn" onclick="changePage(-1)" id="prevBtn">
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button class="page-btn" onclick="changePage(1)" id="nextBtn">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Sample courses data
+        const coursesData = [
+            { id: 1, code: 'BH8LLB', name: 'Introduction to Legal Systems', lecturer: 'Prof. John Mugisha', year: 1, semester: 1, uploadDate: '2024-09-15', fileSize: '2.4 MB', views: 156, status: 'viewed', description: 'An overview of the Rwandan legal system, sources of law, and the structure of the judiciary.' },
+            { id: 2, code: 'BH8LLB', name: 'Constitutional Law I', lecturer: 'Prof. Sarah Kamanzi', year: 1, semester: 1, uploadDate: '2024-09-20', fileSize: '3.1 MB', views: 203, status: 'new', description: 'Study of the Constitution of Rwanda, fundamental rights, and the organization of state powers.' },
+            { id: 3, code: 'BH8LLB', name: 'Criminal Law I', lecturer: 'Prof. Robert Nzabimana', year: 2, semester: 1, uploadDate: '2024-10-01', fileSize: '2.8 MB', views: 89, status: 'new', description: 'Introduction to criminal law principles, elements of crimes, and general defenses.' },
+            { id: 4, code: 'BH8LLB', name: 'Contract Law', lecturer: 'Prof. Grace Mukase', year: 2, semester: 1, uploadDate: '2024-10-05', fileSize: '3.5 MB', views: 124, status: 'viewed', description: 'Formation, validity, and enforcement of contracts under Rwandan law.' },
+            { id: 5, code: 'BH8LLB', name: 'Tort Law', lecturer: 'Dr. Jean Baptiste', year: 2, semester: 2, uploadDate: '2024-10-15', fileSize: '2.6 MB', views: 67, status: 'new', description: 'Principles of civil liability, negligence, and damages.' },
+            { id: 6, code: 'BH8LLB', name: 'International Law', lecturer: 'Prof. Marie Claire', year: 3, semester: 1, uploadDate: '2024-10-20', fileSize: '3.2 MB', views: 45, status: 'new', description: 'Introduction to public international law and its application in Rwanda.' },
+            { id: 7, code: 'BH8LLB', name: 'Human Rights Law', lecturer: 'Dr. Patrick Musemakweli', year: 3, semester: 1, uploadDate: '2024-10-25', fileSize: '2.9 MB', views: 78, status: 'new', description: 'International and regional human rights frameworks and their implementation.' },
+            { id: 8, code: 'BH8LLB', name: 'Commercial Law', lecturer: 'CPA John', year: 3, semester: 2, uploadDate: '2024-11-01', fileSize: '3.4 MB', views: 56, status: 'new', description: 'Business organizations, commercial transactions, and bankruptcy law.' },
+            { id: 9, code: 'BH8LLB', name: 'Property Law', lecturer: 'Dr. Emile', year: 3, semester: 2, uploadDate: '2024-11-05', fileSize: '2.8 MB', views: 34, status: 'new', description: 'Ownership, possession, and transfer of property rights.' },
+            { id: 10, code: 'BH8LLB', name: 'Legal Research Methods', lecturer: 'Prof. Hakizimana', year: 4, semester: 1, uploadDate: '2024-11-10', fileSize: '2.1 MB', views: 23, status: 'new', description: 'Techniques for legal research, citation, and academic writing.' }
+        ];
+
+        const collegeDisplayNames = {
+            'cass': 'College of Arts & Social Sciences',
+            'cbe': 'College of Business & Economics',
+            'cmhs': 'College of Medicine & Health Sciences',
+            'cst': 'College of Science & Technology',
+            'caff': 'College of Agriculture & Food Sciences',
+            'ce': 'College of Education',
+            'cvas': 'College of Veterinary & Animal Sciences'
+        };
+
+        let currentUser = null;
+        let filteredCourses = [...coursesData];
+        let currentPage = 1;
+        const itemsPerPage = 6;
+        let currentView = 'grid';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+        });
+
+        function loadUserData() {
+            currentUser = JSON.parse(localStorage.getItem('ur_current_user') || {});
+            
+            // Update academic badge
+            const badgeText = `${currentUser.programCode || currentUser.program || ''} | Year ${currentUser.year || 1}`;
+            document.getElementById('badgeText').textContent = badgeText;
+
+            // Filter courses by user's program
+            if (currentUser.college) {
+                filteredCourses = coursesData.filter(c => c.code.startsWith(currentUser.programCode?.substring(0, 4) || 'BH8'));
+            }
+
+            renderCourses();
+        }
+
+        function renderCourses(groupBySemester = true) {
+            const container = document.getElementById('coursesContainer');
+            
+            if (groupBySemester) {
+                // Group by semester
+                const grouped = {};
+                filteredCourses.forEach(course => {
+                    const key = `Year ${course.year} - Semester ${course.semester}`;
+                    if (!grouped[key]) grouped[key] = [];
+                    grouped[key].push(course);
+                });
+
+                container.innerHTML = Object.entries(grouped).map(([key, courses]) => `
+                    <div class="semester-group">
+                        <div class="semester-header">
+                            <h3><i class="fas fa-calendar-alt"></i> ${key}</h3>
+                            <span class="semester-count">${courses.length} module${courses.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div class="courses-grid ${currentView}-view">
+                            ${courses.map(course => renderCourseCard(course)).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                // Flat list
+                container.innerHTML = `
+                    <div class="courses-grid ${currentView}-view">
+                        ${filteredCourses.map(course => renderCourseCard(course)).join('')}
+                    </div>
+                `;
+            }
+
+            updatePagination();
+        }
+
+        function renderCourseCard(course) {
+            const initials = course.lecturer.split(' ').map(n => n[0]).join('');
+            
+            return `
+                <div class="course-card" onclick="openCourse(${course.id})">
+                    <div class="course-banner">
+                        <i class="fas fa-gavel"></i>
+                        ${course.status === 'new' ? '<span class="course-status new">NEW</span>' : ''}
+                        ${course.status === 'viewed' ? '<span class="course-status viewed"><i class="fas fa-check"></i> Viewed</span>' : ''}
+                    </div>
+                    <div class="course-body">
+                        <div class="course-info">
+                            <span class="course-code">${course.code}</span>
+                            <h3 class="course-title">${course.name}</h3>
+                            <div class="course-meta">
+                                <span><i class="fas fa-calendar"></i> ${course.uploadDate}</span>
+                                <span><i class="fas fa-file"></i> ${course.fileSize}</span>
+                                <span><i class="fas fa-eye"></i> ${course.views} views</span>
+                            </div>
+                            <p class="course-description">${course.description}</p>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-lecturer">
+                                <div class="lecturer-avatar">${initials}</div>
+                                <span class="lecturer-name">${course.lecturer}</span>
+                            </div>
+                            <button class="course-action" onclick="event.stopPropagation(); openCourse(${course.id})">
+                                <i class="fas fa-book-open"></i> Read
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleSearch() {
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const yearFilter = document.getElementById('yearFilter').value;
+            const semesterFilter = document.getElementById('semesterFilter').value;
+            const sortFilter = document.getElementById('sortFilter').value;
+
+            filteredCourses = coursesData.filter(course => {
+                // Search filter
+                const matchesSearch = !searchTerm || 
+                    course.name.toLowerCase().includes(searchTerm) ||
+                    course.code.toLowerCase().includes(searchTerm) ||
+                    course.lecturer.toLowerCase().includes(searchTerm) ||
+                    course.description.toLowerCase().includes(searchTerm);
+
+                // Year filter
+                const matchesYear = yearFilter === 'all' || course.year === parseInt(yearFilter);
+
+                // Semester filter
+                const matchesSemester = semesterFilter === 'all' || course.semester === parseInt(semesterFilter);
+
+                return matchesSearch && matchesYear && matchesSemester;
+            });
+
+            // Sort
+            switch(sortFilter) {
+                case 'newest':
+                    filteredCourses.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+                    break;
+                case 'oldest':
+                    filteredCourses.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate));
+                    break;
+                case 'title':
+                    filteredCourses.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'views':
+                    filteredCourses.sort((a, b) => b.views - a.views);
+                    break;
+            }
+
+            currentPage = 1;
+            renderCourses(false);
+            document.getElementById('resultsCount').textContent = filteredCourses.length;
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.view-btn').classList.add('active');
+            
+            const grids = document.querySelectorAll('.courses-grid');
+            grids.forEach(grid => {
+                grid.classList.remove('grid-view', 'list-view');
+                grid.classList.add(`${view}-view`);
+            });
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+
+        function changePage(delta) {
+            const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
+            currentPage = Math.max(1, Math.min(currentPage + delta, totalPages));
+            renderCourses(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openCourse(courseId) {
+            // Track as viewed
+            const course = coursesData.find(c => c.id === courseId);
+            if (course && course.status === 'new') {
+                course.status = 'viewed';
+                course.views++;
+            }
+            
+            // In real app, would open document reader
+            window.location.href = 'document-reader.html';
+        }
+
+        function navigateTo(page) {
+            if (page === 'dashboard') {
+                window.location.href = 'student-dashboard.html';
+            } else if (page === 'profile') {
+                window.location.href = 'student-profile.html';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('ur_current_user');
+            window.location.href = 'student-login.html';
+        }
+    </script>
+</body>
+</html>

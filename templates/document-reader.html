@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Reader - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --bg-light: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --highlight-yellow: rgba(250, 204, 21, 0.4);
+            --highlight-green: rgba(34, 197, 94, 0.4);
+            --highlight-blue: rgba(59, 130, 246, 0.4);
+            --highlight-red: rgba(239, 68, 68, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Header Toolbar */
+        .reader-toolbar {
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            color: var(--text-main);
+            background: var(--border);
+        }
+
+        .document-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            max-width: 350px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .document-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .toolbar-center {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toolbar-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .toolbar-btn:hover {
+            color: var(--text-main);
+            background: var(--border);
+        }
+
+        .toolbar-btn.active {
+            color: var(--accent);
+            background: rgba(198, 153, 60, 0.1);
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .text-size-control {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--border);
+            border-radius: 6px;
+            padding: 0.25rem;
+        }
+
+        .text-size-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .text-size-btn:hover {
+            color: var(--text-main);
+        }
+
+        .text-size-display {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            min-width: 35px;
+            text-align: center;
+        }
+
+        /* Progress Indicator */
+        .reading-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 101;
+            transition: width 0.3s ease;
+        }
+
+        /* Main Layout */
+        .reader-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* Left Sidebar - Navigation */
+        .nav-sidebar {
+            background: var(--bg-light);
+            border-right: 1px solid var(--border);
+            padding: 1rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 60px);
+            position: sticky;
+            top: 60px;
+        }
+
+        .nav-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-search {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .nav-search:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .nav-item:hover {
+            background: var(--border);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: rgba(198, 153, 60, 0.1);
+            color: var(--accent);
+        }
+
+        .nav-item .article-num {
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 50px;
+        }
+
+        .nav-item .article-title {
+            flex: 1;
+            line-height: 1.3;
+        }
+
+        .nav-item.bookmarked {
+            background: rgba(198, 153, 60, 0.05);
+        }
+
+        .nav-item.bookmarked i {
+            color: var(--accent);
+        }
+
+        /* Go to Article Input */
+        .goto-container {
+            margin-bottom: 1rem;
+        }
+
+        .goto-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+        }
+
+        .goto-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .goto-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Main Content - Document */
+        .document-content {
+            padding: 2rem 3rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        .document-content.reading-mode {
+            max-width: 680px;
+        }
+
+        .document-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .document-header h1 {
+            font-family: 'Merriweather', serif;
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .document-header .course-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .document-header .course-info span {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        /* Document Sections */
+        .doc-section {
+            margin-bottom: 1.5rem;
+            scroll-margin-top: 80px;
+        }
+
+        .doc-preamble {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(198, 153, 60, 0.05);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .doc-article {
+            margin-bottom: 1.25rem;
+        }
+
+        .article-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 6px;
+        }
+
+        .article-number {
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.9rem;
+            min-width: 70px;
+        }
+
+        .article-title {
+            font-family: 'Merriweather', serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .article-content {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            padding-left: 85px;
+            text-align: justify;
+        }
+
+        .article-content p {
+            margin-bottom: 0.75rem;
+        }
+
+        /* Sections and Clauses */
+        .doc-section-ref {
+            font-weight: 600;
+            color: var(--primary-light);
+            cursor: pointer;
+            text-decoration: none;
+            border-bottom: 1px dashed var(--primary-light);
+            transition: all 0.2s;
+        }
+
+        .doc-section-ref:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .clause {
+            margin-left: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sub-clause {
+            margin-left: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        /* Footnotes */
+        .footnote {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }
+
+        /* Right Sidebar - Tools */
+        .tools-sidebar {
+            background: var(--bg-light);
+            border-left: 1px solid var(--border);
+            padding: 1rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 60px);
+            position: sticky;
+            top: 60px;
+        }
+
+        .tools-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .tools-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Search Panel */
+        .search-panel {
+            margin-bottom: 1rem;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .search-btn {
+            padding: 0.5rem 0.75rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-filter {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .search-filter.active {
+            background: rgba(198, 153, 60, 0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .search-result {
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .search-result:hover {
+            background: var(--border);
+        }
+
+        .search-result .highlight {
+            background: var(--highlight-yellow);
+            color: var(--text-main);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        .search-result .location {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .results-count {
+            font-size: 0.75rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Highlight Colors */
+        .highlight-toolbar {
+            display: flex;
+            gap: 0.35rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .highlight-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .highlight-color:hover, .highlight-color.active {
+            transform: scale(1.15);
+            border-color: white;
+        }
+
+        .highlight-yellow { background: #facc15; }
+        .highlight-green { background: #22c55e; }
+        .highlight-blue { background: #3b82f6; }
+        .highlight-red { background: #ef4444; }
+
+        /* Annotations Panel */
+        .annotation-item {
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .annotation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.35rem;
+        }
+
+        .annotation-type {
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .annotation-type.highlight { color: #facc15; }
+        .annotation-type.note { color: #3b82f6; }
+        .annotation-type.bookmark { color: #ef4444; }
+
+        .annotation-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .annotation-action {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.7rem;
+            padding: 0.2rem;
+        }
+
+        .annotation-action:hover {
+            color: var(--text-main);
+        }
+
+        .annotation-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .annotation-context {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+            font-style: italic;
+        }
+
+        /* Notes Input */
+        .note-input {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            resize: none;
+            margin-bottom: 0.5rem;
+        }
+
+        .note-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .add-note-btn {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--primary);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Bookmarks List */
+        .bookmark-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bookmark-item:hover {
+            background: var(--border);
+        }
+
+        .bookmark-item i {
+            color: var(--accent);
+        }
+
+        .bookmark-info {
+            flex: 1;
+        }
+
+        .bookmark-title {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .bookmark-location {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* Definitions Panel */
+        .definition-item {
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .definition-term {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .definition-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Reading Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .stat-item {
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* References Panel */
+        .reference-item {
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reference-item:hover {
+            background: var(--border);
+        }
+
+        .reference-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .reference-target {
+            font-size: 0.7rem;
+            color: var(--accent);
+            margin-top: 0.25rem;
+        }
+
+        /* Full Screen Mode */
+        body.fullscreen .nav-sidebar,
+        body.fullscreen .tools-sidebar {
+            display: none;
+        }
+
+        body.fullscreen .reader-container {
+            grid-template-columns: 1fr;
+        }
+
+        body.fullscreen .reader-toolbar {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        body.fullscreen .reader-toolbar:hover {
+            opacity: 1;
+        }
+
+        /* Collapsed Footnotes */
+        .footnote.collapsed {
+            max-height: 40px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .footnote.collapsed::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(transparent, var(--bg));
+        }
+
+        .footnote-toggle {
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        /* Highlighted Text */
+        .highlighted {
+            background: var(--highlight-yellow);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        .highlight-green .highlighted { background: var(--highlight-green); }
+        .highlight-blue .highlighted { background: var(--highlight-blue); }
+        .highlight-red .highlighted { background: var(--highlight-red); }
+
+        /* Case Summary Panel */
+        .case-summary {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid var(--accent);
+        }
+
+        .case-summary h4 {
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .case-summary p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .reader-container {
+                grid-template-columns: 220px 1fr;
+            }
+            
+            .tools-sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .reader-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-sidebar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="reading-progress" id="readingProgress" style="width: 0%"></div>
+
+    <!-- Toolbar -->
+    <header class="reader-toolbar">
+        <div class="toolbar-left">
+            <button class="back-btn" onclick="goBack()" title="Go Back">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <div class="document-title" id="docTitle">Loading document...</div>
+                <div class="document-meta" id="docMeta"></div>
+            </div>
+        </div>
+        
+        <div class="toolbar-center">
+            <button class="toolbar-btn" onclick="decreaseFontSize()" title="Decrease Text Size">
+                <i class="fas fa-minus"></i>
+            </button>
+            <div class="text-size-control">
+                <button class="text-size-btn" onclick="decreaseFontSize()">A</button>
+                <span class="text-size-display" id="textSizeDisplay">100%</span>
+                <button class="text-size-btn" onclick="increaseFontSize()">A</button>
+            </div>
+            <button class="toolbar-btn" onclick="increaseFontSize()" title="Increase Text Size">
+                <i class="fas fa-plus"></i>
+            </button>
+            
+            <div style="width: 1px; height: 24px; background: var(--border); margin: 0 0.5rem;"></div>
+            
+            <button class="toolbar-btn" onclick="toggleReadingMode()" id="readingModeBtn" title="Reading Mode">
+                <i class="fas fa-columns"></i>
+            </button>
+            <button class="toolbar-btn" onclick="toggleFullscreen()" title="Full Screen">
+                <i class="fas fa-expand"></i>
+            </button>
+            
+            <div style="width: 1px; height: 24px; background: var(--border); margin: 0 0.5rem;"></div>
+            
+            <button class="toolbar-btn" onclick="toggleSidebar('nav')" id="navToggle" title="Navigation">
+                <i class="fas fa-list"></i>
+            </button>
+            <button class="toolbar-btn" onclick="toggleSidebar('tools')" id="toolsToggle" title="Tools">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+        </div>
+        
+        <div class="toolbar-right">
+            <button class="toolbar-btn" onclick="toggleDarkMode()" title="Toggle Theme">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="toolbar-btn" onclick="downloadDocument()" title="Download">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="reader-container">
+        <!-- Navigation Sidebar -->
+        <aside class="nav-sidebar" id="navSidebar">
+            <div class="nav-section">
+                <div class="nav-section-title">
+                    <i class="fas fa-search"></i> Quick Navigation
+                </div>
+                <div class="goto-container">
+                    <input type="text" class="goto-input" id="gotoInput" placeholder="Go to Article..." onkeyup="handleGotoKeyup(event)">
+                    <div class="goto-hint">Type "Article 12" or "Section 4"</div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">
+                    <i class="fas fa-bookmark"></i> Bookmarks
+                </div>
+                <div id="bookmarksList">
+                    <div class="nav-item" style="color: var(--text-muted); font-size: 0.75rem; justify-content: center;">
+                        No bookmarks yet
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">
+                    <i class="fas fa-sitemap"></i> Contents
+                </div>
+                <div id="tocList">
+                    <!-- Auto-generated TOC -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Document Content -->
+        <main class="document-content" id="documentContent">
+            <!-- Content loaded dynamically -->
+        </main>
+
+        <!-- Tools Sidebar -->
+        <aside class="tools-sidebar" id="toolsSidebar">
+            <!-- Search Panel -->
+            <div class="tools-section">
+                <div class="tools-section-title">
+                    <span><i class="fas fa-search"></i> Search Document</span>
+                </div>
+                <div class="search-panel">
+                    <div class="search-input-wrapper">
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search..." onkeyup="handleSearchKeyup(event)">
+                        <button class="search-btn" onclick="searchDocument()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="search-filters">
+                        <label class="search-filter active" onclick="toggleSearchFilter(this, 'all')">All</label>
+                        <label class="search-filter" onclick="toggleSearchFilter(this, 'titles')">Titles Only</label>
+                        <label class="search-filter" onclick="toggleSearchFilter(this, 'footnotes')">Footnotes</label>
+                    </div>
+                    <div class="search-results" id="searchResults">
+                        <div class="results-count" id="resultsCount"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Highlights Panel -->
+            <div class="tools-section">
+                <div class="tools-section-title">
+                    <span><i class="fas fa-highlighter"></i> Highlight</span>
+                </div>
+                <div class="highlight-toolbar">
+                    <div class="highlight-color highlight-yellow active" onclick="selectHighlightColor('yellow')" title="Yellow"></div>
+                    <div class="highlight-color highlight-green" onclick="selectHighlightColor('green')" title="Green"></div>
+                    <div class="highlight-color highlight-blue" onclick="selectHighlightColor('blue')" title="Blue"></div>
+                    <div class="highlight-color highlight-red" onclick="selectHighlightColor('red')" title="Red"></div>
+                </div>
+                <button class="toolbar-btn" style="width: 100%; justify-content: center;" onclick="addBookmark()">
+                    <i class="fas fa-bookmark"></i> Add Bookmark
+                </button>
+            </div>
+
+            <!-- Notes Panel -->
+            <div class="tools-section">
+                <div class="tools-section-title">
+                    <span><i class="fas fa-sticky-note"></i> Add Note</span>
+                </div>
+                <textarea class="note-input" id="noteInput" rows="3" placeholder="Type your note here..."></textarea>
+                <button class="add-note-btn" onclick="saveNote()">Save Note</button>
+            </div>
+
+            <!-- Annotations List -->
+            <div class="tools-section">
+                <div class="tools-section-title">
+                    <span><i class="fas fa-layer-group"></i> Your Annotations</span>
+                    <span id="annotationCount" style="font-size: 0.65rem; color: var(--accent);">0</span>
+                </div>
+                <div id="annotationsList">
+                    <div class="annotation-item" style="text-align: center; color: var(--text-muted); font-size: 0.75rem;">
+                        Select text to highlight or add notes
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reading Stats -->
+            <div class="tools-section">
+                <div class="tools-section-title">
+                    <i class="fas fa-chart-bar"></i> Reading Stats
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="timeSpent">0:00</div>
+                        <div class="stat-label">Time Spent</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="wordsRead">0</div>
+                        <div class="stat-label">Words</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="highlightCount">0</div>
+                        <div class="stat-label">Highlights</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="noteCount">0</div>
+                        <div class="stat-label">Notes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Definitions Panel -->
+            <div class="tools-section">
+                <div class="tools-section-title">
+                    <span><i class="fas fa-book"></i> Key Definitions</span>
+                </div>
+                <div id="definitionsList">
+                    <div class="definition-item">
+                        <div class="definition-term">Legal Person</div>
+                        <div class="definition-text">Any human or non-human entity that is recognized as having legal rights and obligations</div>
+                    </div>
+                    <div class="definition-item">
+                        <div class="definition-term">Jurisdiction</div>
+                        <div class="definition-text">The official power or right to make legal decisions and judgments</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- References Panel -->
+            <div class="tools-section">
+                <div class="tools-section-title">
+                    <span><i class="fas fa-link"></i> Cross-References</span>
+                </div>
+                <div id="referencesList">
+                    <div class="reference-item" onclick="jumpToArticle('Article 12')">
+                        <div class="reference-text">"as provided in Article 12 of this Law"</div>
+                        <div class="reference-target">→ Article 12</div>
+                    </div>
+                    <div class="reference-item" onclick="jumpToArticle('Section 4')">
+                        <div class="reference-text">"subject to the provisions of Section 4(2)"</div>
+                        <div class="reference-target">→ Section 4(2)</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Sample Law Document Content
+        const sampleDocument = {
+            title: "LAW ON THE ORGANISATION AND FUNCTIONING OF THE NATIONAL PUBLIC PROSECUTION AUTHORITY",
+            code: "BH8LLB-2024",
+            lecturer: "Prof. Sarah Kamanzi",
+            course: "Constitutional Law I",
+            year: "Year 1, Semester 1",
+            uploadDate: "2024-09-20",
+            fileSize: "3.1 MB",
+            content: `
+                <div class="doc-preamble">
+                    <strong>PREAMBLE</strong><br>
+                    THE PRESIDENT OF THE REPUBLIC OF RWANDA;<br>
+                    THE PARLIAMENT HAS ADOPTED AND WE SANCTION, PROMULGATE THE FOLLOWING LAW AND ORDER IT TO BE PUBLISHED AS LAW OF THE LAND.
+                </div>
+
+                <div class="doc-article" id="article-1">
+                    <div class="article-header">
+                        <span class="article-number">Article 1</span>
+                        <span class="article-title">Purpose of this Law</span>
+                    </div>
+                    <div class="article-content">
+                        <p>This Law determines the organization and functioning of the National Public Prosecution Authority, hereinafter referred to as "the Authority". The Authority is established in accordance with <span class="doc-section-ref" onclick="jumpToArticle('Article 23')">Article 23</span> of the Constitution of the Republic of Rwanda of 2003 revised in 2015.</p>
+                        <p>The purpose of this Law is to ensure the effective implementation of criminal justice and to guarantee the respect of the law in the fight against crime and any other offenses.</p>
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-2">
+                    <div class="article-header">
+                        <span class="article-number">Article 2</span>
+                        <span class="article-title">Definitions</span>
+                    </div>
+                    <div class="article-content">
+                        <p>For the purposes of this Law:</p>
+                        <div class="clause"><strong>1°</strong> "Prosecutor" means a public prosecution officer invested with the power to institute and conduct public prosecution in criminal cases.</div>
+                        <div class="clause"><strong>2°</strong> "Prosecution" means the institution and conduct of criminal proceedings against a suspect or an accused before the competent court.</div>
+                        <div class="clause"><strong>3°</strong> "Judicial police officer" means any police officer or any other public officer appointed in accordance with the law to carry out judicial police duties<sup class="footnote-toggle" onclick="toggleFootnote(this)">1</sup>.</div>
+                    </div>
+                    <div class="footnote">
+                        <sup>1</sup> See Law n° 30/2018 of 02/05/2018 determining the mission, organization and functioning of the Rwanda National Police.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-3">
+                    <div class="article-header">
+                        <span class="article-number">Article 3</span>
+                        <span class="article-title">Mission of the Authority</span>
+                    </div>
+                    <div class="article-content">
+                        <p>The Authority has the following mission:</p>
+                        <div class="clause"><strong>1°</strong> To ensure the respect of the law in the investigation and prosecution of criminal offenses;</div>
+                        <div class="clause"><strong>2°</strong> To conduct criminal investigations and initiate public prosecution in accordance with the law;</div>
+                        <div class="clause"><strong>3°</strong> To represent the State in criminal proceedings before courts<sup class="footnote-toggle" onclick="toggleFootnote(this)">2</sup>;</div>
+                        <div class="sub-clause"><em>(2°)</em> To monitor the implementation of court decisions in criminal matters;</div>
+                        <div class="clause"><strong>4°</strong> To cooperate with other national and international institutions in the fight against crime.</div>
+                    </div>
+                    <div class="footnote">
+                        <sup>2</sup> This includes all criminal courts established by the law including the High Court, Intermediate Courts and Primary Courts.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-4">
+                    <div class="article-header">
+                        <span class="article-number">Article 4</span>
+                        <span class="article-title">Organization of the Authority</span>
+                    </div>
+                    <div class="article-content">
+                        <p>The Authority is organized at the following levels:</p>
+                        <div class="clause"><strong>1°</strong> The National Public Prosecution Authority;</div>
+                        <div class="clause"><strong>2°</strong> The Regional Public Prosecution Offices;</div>
+                        <div class="clause"><strong>3°</strong> The District Public Prosecution Offices<sup class="footnote-toggle" onclick="toggleFootnote(this)">3</sup>.</div>
+                    </div>
+                    <div class="footnote">
+                        <sup>3</sup> The District Offices may be established in accordance with administrative divisions as determined by the relevant laws.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-5">
+                    <div class="article-header">
+                        <span class="article-number">Article 5</span>
+                        <span class="article-title">General Prosecutor</span>
+                    </div>
+                    <div class="article-content">
+                        <p>The General Prosecutor is the head of the Authority. He/She is appointed in accordance with the provisions of the Constitution.</p>
+                        <p>The General Prosecutor exercises the following powers:</p>
+                        <div class="clause"><strong>1°</strong> To represent the Authority before the Supreme Court and any other higher courts as may be required by law;</div>
+                        <div class="clause"><strong>2°</strong> To issue directives and circulars for the proper functioning of the Authority;</div>
+                        <div class="clause"><strong>3°</strong> To coordinate the activities of all prosecutorial offices throughout the country<sup class="footnote-toggle" onclick="toggleFootnote(this)">4</sup>.</div>
+                    </div>
+                    <div class="footnote">
+                        <sup>4</sup> Coordination includes both administrative and technical supervision of regional and district offices.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-6">
+                    <div class="article-header">
+                        <span class="article-number">Article 6</span>
+                        <span class="article-title">Deputy General Prosecutors</span>
+                    </div>
+                    <div class="article-content">
+                        <p>The Deputy General Prosecutors assist the General Prosecutor in the exercise of his/her duties. They are appointed in accordance with the law.</p>
+                        <p>In case of absence of the General Prosecutor, the Deputy General Prosecutor designated by the General Prosecutor exercises all powers of the General Prosecutor<sup class="footnote-toggle" onclick="toggleFootnote(this)">5</sup>.</p>
+                    </div>
+                    <div class="footnote">
+                        <sup>5</sup> The designation is made by written order of the General Prosecutor.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-7">
+                    <div class="article-header">
+                        <span class="article-number">Article 7</span>
+                        <span class="article-title">Powers of Prosecutors</span>
+                    </div>
+                    <div class="article-content">
+                        <p>Subject to the provisions of <span class="doc-section-ref" onclick="jumpToArticle('Article 8')">Article 8</span> of this Law, prosecutors have the power to:</p>
+                        <div class="clause"><strong>1°</strong> Initiate criminal proceedings;</div>
+                        <div class="clause"><strong>2°</strong> Conduct investigations and direct judicial police officers;</div>
+                        <div class="clause"><strong>3°</strong> Request the competent court to issue warrants for search and seizure;</div>
+                        <div class="clause"><strong>4°</strong> Decide on the detention or release of suspects<sup class="footnote-toggle" onclick="toggleFootnote(this)">6</sup>;</div>
+                        <div class="clause"><strong>5°</strong> Negotiate plea agreements in accordance with the law.</div>
+                    </div>
+                    <div class="footnote">
+                        <sup>6</sup> The detention must be in accordance with the Criminal Procedure Code.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-8">
+                    <div class="article-header">
+                        <span class="article-number">Article 8</span>
+                        <span class="article-title">Hierarchical Authority</span>
+                    </div>
+                    <div class="article-content">
+                        <p>Prosecutors are hierarchically organized. The General Prosecutor has authority over all prosecutors in the country.</p>
+                        <p>Regional Prosecutors have authority over Prosecutors within their jurisdiction<sup class="footnote-toggle" onclick="toggleFootnote(this)">7</sup>. This hierarchical structure ensures the uniformity of prosecutorial practice and the proper application of the law.</p>
+                    </div>
+                    <div class="footnote">
+                        <sup>7</sup> Regional boundaries are determined by the Ministry of Justice in consultation with the General Prosecutor.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-9">
+                    <div class="article-header">
+                        <span class="article-number">Article 9</span>
+                        <span class="article-title">Independence of Prosecutors</span>
+                    </div>
+                    <div class="article-content">
+                        <p>In the exercise of their functions, prosecutors shall act independently and impartially. They shall not be subject to any external influence or pressure, whether political or otherwise<sup class="footnote-toggle" onclick="toggleFootnote(this)">8</sup>.</p>
+                        <p>No prosecutor shall be prosecuted, arrested or detained without the authorization of the Supreme Court, in accordance with the law.</p>
+                    </div>
+                    <div class="footnote">
+                        <sup>8</sup> This independence is guaranteed by the Constitution and international human rights standards.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-10">
+                    <div class="article-header">
+                        <span class="article-number">Article 10</span>
+                        <span class="article-title">Confidentiality</span>
+                    </div>
+                    <div class="article-content">
+                        <p>Prosecutors shall maintain the confidentiality of information obtained in the course of their duties, except when disclosure is required by law or by a court order<sup class="footnote-toggle" onclick="toggleFootnote(this)">9</sup>.</p>
+                    </div>
+                    <div class="footnote">
+                        <sup>9</sup> Confidentiality does not prevent the prosecution from sharing information with defense counsel as required by the principles of fair trial.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-11">
+                    <div class="article-header">
+                        <span class="article-number">Article 11</span>
+                        <span class="article-title">Training of Prosecutors</span>
+                    </div>
+                    <div class="article-content">
+                        <p>The Authority shall ensure the continuous training of prosecutors in order to enhance their professional skills and knowledge of the law<sup class="footnote-toggle" onclick="toggleFootnote(this)">10</sup>.</p>
+                        <p>Such training shall include:</p>
+                        <div class="clause"><strong>1°</strong> Human rights law;</div>
+                        <div class="clause"><strong>2°</strong> International criminal law;</div>
+                        <div class="clause"><strong>3°</strong> Evidence law;</div>
+                        <div class="clause"><strong>4°</strong> Techniques of investigation and prosecution.</div>
+                    </div>
+                    <div class="footnote">
+                        <sup>10</sup> Training programs are developed in cooperation with recognized national and international institutions.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-12">
+                    <div class="article-header">
+                        <span class="article-number">Article 12</span>
+                        <span class="article-title">Code of Ethics</span>
+                    </div>
+                    <div class="article-content">
+                        <p>Prosecutors shall be bound by a Code of Ethics which shall determine the rules of conduct applicable to them<sup class="footnote-toggle" onclick="toggleFootnote(this)">11</sup>.</p>
+                        <p>The Code of Ethics shall be developed and adopted by the Authority in accordance with international standards and best practices<sup class="footnote-toggle" onclick="toggleFootnote(this)">12</sup>.</p>
+                    </div>
+                    <div class="footnote">
+                        <sup>11</sup> The Code of Ethics addresses issues such as integrity, impartiality, confidentiality, and professional conduct.
+                    </div>
+                    <div class="footnote">
+                        <sup>12</sup> Reference is made to the United Nations Guidelines on the Role of Prosecutors.
+                    </div>
+                </div>
+
+                <div class="doc-article" id="article-13">
+                    <div class="article-header">
+                        <span class="article-number">Article 13</span>
+                        <span class="article-title">Disciplinary Proceedings</span>
+                    </div>
+                    <div class="article-content">
+                        <p>Prosecutors who violate the provisions of this Law or the Code of Ethics shall be subject to disciplinary proceedings<sup class="footnote-toggle" onclick="toggleFootnote(this)">13</sup>.</p>
+                        <p>Disciplinary sanctions shall be determined in accordance with the law governing the public service.</p>
+                    </div>
+                    <div class="footnote">
+                        <sup>13</sup> Disciplinary proceedings are conducted by a disciplinary board established within the Authority.
+                    </div>
+                </div>
+            `
+        };
+
+        // State
+        let currentFontSize = 100;
+        let selectedHighlightColor = 'yellow';
+        let annotations = [];
+        let bookmarks = [];
+        let notes = [];
+        let searchFilter = 'all';
+        let timeSpent = 0;
+        let startTime = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDocument();
+            setupTextSelection();
+            startTimer();
+            updateProgress();
+        });
+
+        function loadDocument() {
+            // Update header
+            document.getElementById('docTitle').textContent = sampleDocument.title;
+            document.getElementById('docMeta').textContent = `${sampleDocument.code} | ${sampleDocument.lecturer} | ${sampleDocument.course}`;
+
+            // Load content
+            document.getElementById('documentContent').innerHTML = `
+                <div class="document-header">
+                    <h1>${sampleDocument.title}</h1>
+                    <div class="course-info">
+                        <span><i class="fas fa-book"></i> ${sampleDocument.course}</span>
+                        <span><i class="fas fa-user"></i> ${sampleDocument.lecturer}</span>
+                        <span><i class="fas fa-code"></i> ${sampleDocument.code}</span>
+                        <span><i class="fas fa-calendar"></i> ${sampleDocument.uploadDate}</span>
+                        <span><i class="fas fa-file"></i> ${sampleDocument.fileSize}</span>
+                    </div>
+                </div>
+                ${sampleDocument.content}
+            `;
+
+            // Generate TOC
+            generateTOC();
+            updateWordCount();
+        }
+
+        function generateTOC() {
+            const articles = document.querySelectorAll('.doc-article');
+            const tocList = document.getElementById('tocList');
+            
+            tocList.innerHTML = articles.map((article, index) => {
+                const num = article.querySelector('.article-number').textContent;
+                const title = article.querySelector('.article-title').textContent;
+                const id = article.id;
+                return `
+                    <div class="nav-item" onclick="scrollToArticle('${id}')" data-target="${id}">
+                        <span class="article-num">${num}</span>
+                        <span class="article-title">${title}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function scrollToArticle(id) {
+            const article = document.getElementById(id);
+            if (article) {
+                article.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Update active state
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                document.querySelector(`[data-target="${id}"]`)?.classList.add('active');
+            }
+        }
+
+        function jumpToArticle(articleRef) {
+            // Parse article reference
+            const match = articleRef.match(/(?:Article|Section)\s*(\d+(?:\([^)]+\))?)/i);
+            if (match) {
+                const articleNum = match[1];
+                // Find the article
+                const articles = document.querySelectorAll('.doc-article');
+                for (const article of articles) {
+                    const num = article.querySelector('.article-number').textContent;
+                    if (num.toLowerCase().includes(articleNum.toLowerCase())) {
+                        scrollToArticle(article.id);
+                        return;
+                    }
+                }
+            }
+            alert(`Could not find ${articleRef}`);
+        }
+
+        function handleGotoKeyup(event) {
+            if (event.key === 'Enter') {
+                const input = document.getElementById('gotoInput');
+                if (input.value.trim()) {
+                    jumpToArticle(input.value);
+                    input.value = '';
+                }
+            }
+        }
+
+        // Text Selection & Highlighting
+        function setupTextSelection() {
+            document.addEventListener('mouseup', function(e) {
+                const selection = window.getSelection();
+                const selectedText = selection.toString().trim();
+                
+                if (selectedText.length > 0) {
+                    // Show highlight options near selection
+                    // For simplicity, we highlight the selection
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        const span = document.createElement('span');
+                        span.className = 'highlighted';
+                        span.dataset.annotation = 'highlight';
+                        span.dataset.color = selectedHighlightColor;
+                        span.dataset.timestamp = Date.now();
+                        
+                        try {
+                            range.surroundContents(span);
+                            addAnnotation('highlight', selectedText.substring(0, 50) + '...', span.dataset.color);
+                        } catch (e) {
+                            // Handle complex selections
+                            console.log('Complex selection - bookmark created instead');
+                            addBookmarkFromSelection(selectedText);
+                        }
+                    }
+                }
+            });
+        }
+
+        function selectHighlightColor(color) {
+            selectedHighlightColor = color;
+            document.querySelectorAll('.highlight-color').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.highlight-${color}`)?.classList.add('active');
+        }
+
+        function addAnnotation(type, text, color = null) {
+            const annotation = {
+                id: Date.now(),
+                type,
+                text,
+                color,
+                timestamp: new Date().toLocaleString()
+            };
+            annotations.push(annotation);
+            updateAnnotationsList();
+            updateStats();
+        }
+
+        function updateAnnotationsList() {
+            const list = document.getElementById('annotationsList');
+            document.getElementById('annotationCount').textContent = annotations.length;
+            
+            if (annotations.length === 0) {
+                list.innerHTML = `
+                    <div class="annotation-item" style="text-align: center; color: var(--text-muted); font-size: 0.75rem;">
+                        Select text to highlight or add notes
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = annotations.map(ann => `
+                <div class="annotation-item">
+                    <div class="annotation-header">
+                        <span class="annotation-type ${ann.type}">
+                            <i class="fas fa-${ann.type === 'highlight' ? 'highlighter' : ann.type === 'note' ? 'sticky-note' : 'bookmark'}"></i>
+                            ${ann.type.charAt(0).toUpperCase() + ann.type.slice(1)}
+                        </span>
+                        <div class="annotation-actions">
+                            <button class="annotation-action" onclick="deleteAnnotation(${ann.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="annotation-text">${ann.text}</div>
+                    <div class="annotation-context">${ann.timestamp}</div>
+                </div>
+            `).join('');
+        }
+
+        function deleteAnnotation(id) {
+            annotations = annotations.filter(a => a.id !== id);
+            updateAnnotationsList();
+            updateStats();
+        }
+
+        function addBookmark() {
+            const currentArticle = document.querySelector('.doc-article');
+            if (currentArticle) {
+                const num = currentArticle.querySelector('.article-number').textContent;
+                const title = currentArticle.querySelector('.article-title').textContent;
+                
+                bookmarks.push({
+                    id: Date.now(),
+                    articleId: currentArticle.id,
+                    title: `${num}: ${title}`
+                });
+                
+                updateBookmarksList();
+                addAnnotation('bookmark', `${num}: ${title}`);
+            }
+        }
+
+        function addBookmarkFromSelection(text) {
+            bookmarks.push({
+                id: Date.now(),
+                custom: true,
+                title: text.substring(0, 40) + '...'
+            });
+            updateBookmarksList();
+        }
+
+        function updateBookmarksList() {
+            const list = document.getElementById('bookmarksList');
+            if (bookmarks.length === 0) {
+                list.innerHTML = `
+                    <div class="nav-item" style="color: var(--text-muted); font-size: 0.75rem; justify-content: center;">
+                        No bookmarks yet
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = bookmarks.map(bm => `
+                <div class="nav-item bookmark-item" onclick="${bm.articleId ? `scrollToArticle('${bm.articleId}')` : ''}">
+                    <i class="fas fa-bookmark"></i>
+                    <div class="bookmark-info">
+                        <div class="bookmark-title">${bm.title}</div>
+                        ${bm.articleId ? `<div class="bookmark-location">${bm.articleId}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function saveNote() {
+            const input = document.getElementById('noteInput');
+            if (input.value.trim()) {
+                notes.push({
+                    id: Date.now(),
+                    text: input.value.trim(),
+                    timestamp: new Date().toLocaleString()
+                });
+                
+                addAnnotation('note', input.value.trim());
+                input.value = '';
+            }
+        }
+
+        // Search
+        function handleSearchKeyup(event) {
+            if (event.key === 'Enter') {
+                searchDocument();
+            }
+        }
+
+        function searchDocument() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!query) return;
+
+            const content = document.getElementById('documentContent').innerText;
+            const results = [];
+            
+            // Simple search implementation
+            const articles = document.querySelectorAll('.doc-article');
+            articles.forEach((article, index) => {
+                const text = article.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    if (searchFilter === 'titles') {
+                        const title = article.querySelector('.article-title')?.innerText?.toLowerCase() || '';
+                        if (title.includes(query)) {
+                            results.push({
+                                articleId: article.id,
+                                articleNum: article.querySelector('.article-number')?.textContent || `Article ${index + 1}`,
+                                preview: article.querySelector('.article-title')?.textContent || ''
+                            });
+                        }
+                    } else {
+                        const context = article.innerText.substring(0, 100);
+                        results.push({
+                            articleId: article.id,
+                            articleNum: article.querySelector('.article-number')?.textContent || `Article ${index + 1}`,
+                            preview: '...' + query + '...'
+                        });
+                    }
+                }
+            });
+
+            displaySearchResults(results, query);
+        }
+
+        function toggleSearchFilter(el, filter) {
+            searchFilter = filter;
+            document.querySelectorAll('.search-filter').forEach(f => f.classList.remove('active'));
+            el.classList.add('active');
+            if (document.getElementById('searchInput').value) {
+                searchDocument();
+            }
+        }
+
+        function displaySearchResults(results, query) {
+            const container = document.getElementById('searchResults');
+            const countEl = document.getElementById('resultsCount');
+            
+            countEl.textContent = `${results.length} result${results.length !== 1 ? 's' : ''} found`;
+            
+            if (results.length === 0) {
+                container.innerHTML = '<div class="search-result" style="text-align: center; color: var(--text-muted);">No results found</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(result => {
+                const highlighted = result.preview.replace(new RegExp(`(${query})`, 'gi'), '<span class="highlight">$1</span>');
+                return `
+                    <div class="search-result" onclick="scrollToArticle('${result.articleId}')">
+                        <strong>${result.articleNum}</strong>
+                        <div class="location">${highlighted}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Toolbar Functions
+        function decreaseFontSize() {
+            if (currentFontSize > 60) {
+                currentFontSize -= 10;
+                applyFontSize();
+            }
+        }
+
+        function increaseFontSize() {
+            if (currentFontSize < 150) {
+                currentFontSize += 10;
+                applyFontSize();
+            }
+        }
+
+        function applyFontSize() {
+            document.getElementById('textSizeDisplay').textContent = `${currentFontSize}%`;
+            document.getElementById('documentContent').style.fontSize = `${currentFontSize}%`;
+        }
+
+        function toggleReadingMode() {
+            document.getElementById('documentContent').classList.toggle('reading-mode');
+            const btn = document.getElementById('readingModeBtn');
+            btn.classList.toggle('active');
+        }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            if (document.body.classList.contains('fullscreen')) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function toggleSidebar(sidebar) {
+            if (sidebar === 'nav') {
+                document.getElementById('navSidebar').classList.toggle('hidden');
+            } else if (sidebar === 'tools') {
+                document.getElementById('toolsSidebar').classList.toggle('hidden');
+            }
+        }
+
+        function toggleDarkMode() {
+            // Already in dark mode by default - could add light mode toggle
+            alert('Dark mode is default. Light mode coming soon!');
+        }
+
+        function toggleFootnote(el) {
+            const footnote = el.parentElement;
+            if (footnote.classList.contains('collapsed')) {
+                footnote.classList.remove('collapsed');
+                el.textContent = ''; // Hide toggle when expanded
+            } else {
+                footnote.classList.add('collapsed');
+                el.textContent = '+';
+            }
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function downloadDocument() {
+            alert('Downloading document...');
+        }
+
+        // Reading Progress
+        function updateProgress() {
+            window.addEventListener('scroll', function() {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (scrollTop / docHeight) * 100;
+                document.getElementById('readingProgress').style.width = `${Math.min(progress, 100)}%`;
+            });
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('documentContent').innerText;
+            const words = text.split(/\s+/).filter(w => w.length > 0).length;
+            document.getElementById('wordsRead').textContent = words.toLocaleString();
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            setInterval(function() {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timeSpent').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function updateStats() {
+            const highlights = annotations.filter(a => a.type === 'highlight').length;
+            const notesCount = annotations.filter(a => a.type === 'note').length;
+            
+            document.getElementById('highlightCount').textContent = highlights;
+            document.getElementById('noteCount').textContent = notesCount;
+        }
+
+        // Track scroll position for "Continue Reading"
+        window.addEventListener('beforeunload', function() {
+            const scrollPos = window.scrollY;
+            localStorage.setItem('lastScrollPosition', scrollPos);
+            localStorage.setItem('lastDocument', JSON.stringify({
+                title: sampleDocument.title,
+                timestamp: Date.now()
+            }));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Profile - UR Hub</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="profile.css">
+    <style>
+        /* Quick Actions Bar */
+        .quick-actions {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+        
+        .quick-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        
+        .quick-action-btn:hover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+        
+        .quick-action-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        /* Messages Button */
+        .messages-btn {
+            position: relative;
+        }
+        
+        /* Search Bar */
+        .search-bar {
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 10px 16px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .search-input-wrapper:focus-within {
+            border-color: var(--accent);
+        }
+        
+        .search-input-wrapper svg {
+            width: 18px;
+            height: 18px;
+            color: var(--text-muted);
+            margin-right: 12px;
+        }
+        
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        /* Settings Panel */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            z-index: 1000;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .settings-panel.open {
+            right: 0;
+        }
+        
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .settings-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .settings-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        .settings-close:hover {
+            color: var(--text-primary);
+        }
+        
+        .settings-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .settings-section h4 {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            cursor: pointer;
+        }
+        
+        .settings-item span {
+            font-size: 15px;
+        }
+        
+        .toggle-switch {
+            width: 48px;
+            height: 26px;
+            background: var(--bg-card);
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .toggle-switch.active {
+            background: var(--accent);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(22px);
+        }
+        
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <a href="social-knowledge.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>
+            <h1 id="header-title">Profile</h1>
+        </div>
+        <div class="header-right">
+            <button class="icon-btn messages-btn" onclick="openMessages()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span class="notification-badge" id="msg-badge" style="display: none;">3</span>
+            </button>
+            <button class="icon-btn" onclick="openSettings()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <div class="search-input-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="search-input" placeholder="Search posts, people, topics..." id="search-input" oninput="handleSearch(this.value)">
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <button class="quick-action-btn" onclick="openNotifications()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            Notifications
+        </button>
+        <button class="quick-action-btn" onclick="openMessages()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Messages
+        </button>
+        <button class="quick-action-btn" onclick="openGroups()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Groups
+        </button>
+        <button class="quick-action-btn" onclick="openEditProfile()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Edit Profile
+        </button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        
+        <!-- Profile Header -->
+        <header class="profile-header">
+            <div class="banner" id="profile-banner"></div>
+            
+            <div class="profile-info">
+                <div class="profile-avatar-section">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%231e40af'/%3E%3Ctext x='40' y='48' text-anchor='middle' fill='white' font-size='24' font-weight='bold'%3EYU%3C/text%3E%3C/svg%3E" alt="Profile" class="avatar-large" id="profile-avatar">
+                    <button class="edit-avatar-btn" onclick="changeAvatar()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="profile-details">
+                    <h1 class="profile-name" id="profile-name">Your Name</h1>
+                    <p class="profile-handle" id="profile-handle">@username</p>
+                    <p class="profile-bio" id="profile-bio">Your bio goes here...</p>
+                    
+                    <div class="profile-meta">
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Kigali, Rwanda
+                        </span>
+                        <span class="meta-item" id="join-date">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Joined September 2024
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="profile-actions">
+                    <button class="btn-primary" id="edit-profile-btn" onclick="openEditProfile()">
+                        Edit Profile
+                    </button>
+                    <button class="btn-secondary" id="follow-profile-btn" onclick="toggleFollowProfile()" style="display: none;">
+                        Follow
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="profile-stats">
+                <a href="#" class="stat-item" onclick="showFollowers()">
+                    <span class="stat-value" id="stat-followers">0</span>
+                    <span class="stat-label">Followers</span>
+                </a>
+                <a href="#" class="stat-item" onclick="showFollowing()">
+                    <span class="stat-value" id="stat-following">0</span>
+                    <span class="stat-label">Following</span>
+                </a>
+                <a href="#" class="stat-item" onclick="showPosts()">
+                    <span class="stat-value" id="stat-posts">0</span>
+                    <span class="stat-label">Posts</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <nav class="profile-tabs">
+            <button class="tab active" data-tab="posts" onclick="switchTab('posts')">Posts</button>
+            <button class="tab" data-tab="replies" onclick="switchTab('replies')">Replies</button>
+            <button class="tab" data-tab="media" onclick="switchTab('media')">Media</button>
+            <button class="tab" data-tab="about" onclick="switchTab('about')">About</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            
+            <!-- Posts Tab -->
+            <div class="tab-panel active" id="posts-panel">
+                <!-- Posts will be loaded here -->
+            </div>
+
+            <!-- Replies Tab -->
+            <div class="tab-panel" id="replies-panel">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <h3>No replies yet</h3>
+                    <p>When you reply to posts, they'll show up here.</p>
+                </div>
+            </div>
+
+            <!-- Media Tab -->
+            <div class="tab-panel" id="media-panel">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <h3>No media yet</h3>
+                    <p>When you post images, they'll show up here.</p>
+                </div>
+            </div>
+
+            <!-- About Tab -->
+            <div class="tab-panel" id="about-panel">
+                <div class="about-section">
+                    <h3 class="about-heading">Academic Information</h3>
+                    
+                    <div class="about-grid">
+                        <div class="about-item">
+                            <span class="about-label">Faculty</span>
+                            <span class="about-value" id="about-faculty">-</span>
+                        </div>
+                        <div class="about-item">
+                            <span class="about-label">Program</span>
+                            <span class="about-value" id="about-program">-</span>
+                        </div>
+                        <div class="about-item">
+                            <span class="about-label">Year</span>
+                            <span class="about-value" id="about-year">-</span>
+                        </div>
+                        <div class="about-item">
+                            <span class="about-label">Student ID</span>
+                            <span class="about-value" id="about-student-id">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="about-section">
+                    <h3 class="about-heading">Interests</h3>
+                    <div class="skills-tags" id="interests-container">
+                        <span class="skill-tag">Add interests...</span>
+                    </div>
+                </div>
+                
+                <div class="about-section">
+                    <h3 class="about-heading">Links</h3>
+                    <div class="about-links" id="links-container">
+                        <span class="link-item" id="link-website"></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="overlay" id="overlay" onclick="closeSettings()"></div>
+    <div class="settings-panel" id="settings-panel">
+        <div class="settings-header">
+            <h3>Settings</h3>
+            <button class="settings-close" onclick="closeSettings()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="settings-section">
+            <h4>Preferences</h4>
+            <div class="settings-item">
+                <span>Dark Mode</span>
+                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+            </div>
+            <div class="settings-item">
+                <span>Notifications</span>
+                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+            </div>
+            <div class="settings-item">
+                <span>Email Digest</span>
+                <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h4>Privacy</h4>
+            <div class="settings-item">
+                <span>Private Account</span>
+                <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+            </div>
+            <div class="settings-item">
+                <span>Show Activity Status</span>
+                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h4>Account</h4>
+            <div class="settings-item" onclick="openEditProfile()">
+                <span>Edit Profile</span>
+            </div>
+            <div class="settings-item">
+                <span>Change Password</span>
+            </div>
+            <div class="settings-item" style="color: #ef4444;" onclick="confirmLogout()">
+                <span>Log Out</span>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h4>Help</h4>
+            <div class="settings-item">
+                <span>Community Guidelines</span>
+            </div>
+            <div class="settings-item">
+                <span>Report a Problem</span>
+            </div>
+            <div class="settings-item">
+                <span>About UR Hub</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="edit-profile-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <button class="modal-close" onclick="closeEditProfile()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="edit-name" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label>Handle</label>
+                    <input type="text" id="edit-handle" placeholder="@username">
+                </div>
+                <div class="form-group">
+                    <label>Bio</label>
+                    <textarea id="edit-bio" placeholder="Tell us about yourself..." rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Faculty</label>
+                    <select id="edit-faculty">
+                        <option value="">Select Faculty</option>
+                        <option value="School of Engineering">School of Engineering</option>
+                        <option value="School of Medicine">School of Medicine</option>
+                        <option value="School of Law">School of Law</option>
+                        <option value="Business Administration">Business Administration</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Arts & Humanities">Arts & Humanities</option>
+                        <option value="Sciences">Sciences</option>
+                        <option value="Education">Education</option>
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Veterinary Medicine">Veterinary Medicine</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Program</label>
+                    <input type="text" id="edit-program" placeholder="Your program of study">
+                </div>
+                <div class="form-group">
+                    <label>Year</label>
+                    <select id="edit-year">
+                        <option value="">Select Year</option>
+                        <option value="Year 1">Year 1</option>
+                        <option value="Year 2">Year 2</option>
+                        <option value="Year 3">Year 3</option>
+                        <option value="Year 4">Year 4</option>
+                        <option value="Year 5">Year 5</option>
+                        <option value="Graduate">Graduate</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Interests (comma separated)</label>
+                    <input type="text" id="edit-interests" placeholder="Machine Learning, Data Science, AI...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeEditProfile()">Cancel</button>
+                <button class="btn-primary" onclick="saveProfile()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Avatar Modal -->
+    <div class="modal-overlay" id="avatar-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Change Avatar</h3>
+                <button class="modal-close" onclick="closeAvatarModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="avatar-options">
+                    <div class="avatar-option" onclick="selectAvatar('AK')">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%231e40af'/%3E%3Ctext x='20' y='25' text-anchor='middle' fill='white' font-size='14' font-weight='bold'%3EAK%3C/text%3E%3C/svg%3E" alt="Avatar">
+                        <span>AK</span>
+                    </div>
+                    <div class="avatar-option" onclick="selectAvatar('YU')">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%231e3a8a'/%3E%3Ctext x='20' y='25' text-anchor='middle' fill='white' font-size='14' font-weight='bold'%3EYU%3C/text%3E%3C/svg%3E" alt="Avatar">
+                        <span>YU</span>
+                    </div>
+                    <div class="avatar-option" onclick="selectAvatar('JD')">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%231e2939'/%3E%3Ctext x='20' y='25' text-anchor='middle' fill='white' font-size='14' font-weight='bold'%3AJD%3C/text%3E%3C/svg%3E" alt="Avatar">
+                        <span>JD</span>
+                    </div>
+                    <div class="avatar-option" onclick="selectAvatar('MS')">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%230f172a'/%3E%3Ctext x='20' y='25' text-anchor='middle' fill='white' font-size='14' font-weight='bold'%3EMS%3C/text%3E%3C/svg%3E" alt="Avatar">
+                        <span>MS</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="profile.js"></script>
+</body>
+</html>

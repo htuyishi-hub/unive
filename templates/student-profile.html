@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Settings - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--header-bg);
+            padding: 0.85rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-nav a:hover, .header-nav a.active {
+            color: var(--accent);
+        }
+
+        .save-btn {
+            padding: 0.5rem 1.25rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .save-btn:hover {
+            background: var(--accent-light);
+        }
+
+        /* Main Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: sticky;
+            top: 70px;
+            height: fit-content;
+        }
+
+        .profile-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .profile-photo-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 1rem;
+        }
+
+        .profile-photo {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            overflow: hidden;
+        }
+
+        .profile-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-photo-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .upload-photo-btn:hover {
+            background: var(--accent-light);
+            transform: scale(1.1);
+        }
+
+        .profile-name {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-email {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .profile-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Navigation Menu */
+        .nav-menu {
+            background: var(--header-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.9rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--card-bg);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: rgba(198, 153, 60, 0.08);
+            color: var(--accent);
+            border-left-color: var(--accent);
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 0.9rem;
+        }
+
+        .nav-item span {
+            font-size: 0.9rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-header h2 i {
+            color: var(--accent);
+        }
+
+        .section-header .edit-btn {
+            padding: 0.35rem 0.75rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .section-header .edit-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .section-header .edit-btn.editing {
+            background: rgba(198, 153, 60, 0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Form Fields */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(198, 153, 60, 0.1);
+        }
+
+        .form-input:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .form-input.editable {
+            border-color: var(--accent);
+            background: rgba(198, 153, 60, 0.05);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .toggle-group:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .toggle-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider::before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(22px);
+        }
+
+        /* Range Slider */
+        .range-group {
+            padding: 0.85rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .range-group:last-child {
+            border-bottom: none;
+        }
+
+        .range-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .range-header h4 {
+            font-size: 0.9rem;
+        }
+
+        .range-value {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .range-slider {
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Academic Info Display */
+        .academic-info-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .info-item {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .info-item.full-width {
+            grid-column: span 2;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .info-value i {
+            color: var(--accent);
+            margin-right: 0.5rem;
+        }
+
+        /* Danger Zone */
+        .danger-zone {
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .danger-zone .section-header h2 {
+            color: var(--danger);
+        }
+
+        .danger-zone .section-header h2 i {
+            color: var(--danger);
+        }
+
+        .danger-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .danger-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .danger-item h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .danger-item p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .danger-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--danger);
+            border-radius: 6px;
+            color: var(--danger);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .danger-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Notification Preferences */
+        .notification-prefs {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notification-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notification-row:last-child {
+            border-bottom: none;
+        }
+
+        .notification-row h4 {
+            font-size: 0.9rem;
+        }
+
+        /* Confirm Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal h3 i {
+            color: var(--accent);
+        }
+
+        .modal p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn.cancel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .modal-btn.confirm {
+            background: var(--accent);
+            border: none;
+            color: white;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--success);
+            color: white;
+            padding: 0.85rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 300;
+        }
+
+        .toast.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+
+            .academic-info-display {
+                grid-template-columns: 1fr;
+            }
+
+            .info-item.full-width {
+                grid-column: span 1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1 onclick="window.location.href='student-dashboard.html'">
+            <i class="fas fa-university"></i> UR Open Courseware
+        </h1>
+        <nav class="header-nav">
+            <a href="student-dashboard.html" onclick="navigateTo('dashboard')">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="student-courses.html" onclick="navigateTo('courses')">
+                <i class="fas fa-book"></i> My Courses
+            </a>
+            <a href="student-profile.html" class="active" onclick="navigateTo('profile')">
+                <i class="fas fa-user"></i> Profile
+            </a>
+        </nav>
+        <button class="save-btn" onclick="saveAllChanges()">
+            <i class="fas fa-save"></i> Save Changes
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="profile-card">
+                <div class="profile-photo-container">
+                    <div class="profile-photo" id="profilePhoto">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <button class="upload-photo-btn" onclick="uploadPhoto()" title="Upload Photo">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                </div>
+                <h2 class="profile-name" id="profileName">Loading...</h2>
+                <p class="profile-email" id="profileEmail">...</p>
+                <div class="profile-badge">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span id="badgeText">Loading...</span>
+                </div>
+            </div>
+
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="showSection('personal')">
+                    <i class="fas fa-user"></i>
+                    <span>Personal Info</span>
+                </div>
+                <div class="nav-item" onclick="showSection('academic')">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Academic Details</span>
+                </div>
+                <div class="nav-item" onclick="showSection('preferences')">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Preferences</span>
+                </div>
+                <div class="nav-item" onclick="showSection('notifications')">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+                <div class="nav-item" onclick="showSection('security')">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Security</span>
+                </div>
+                <div class="nav-item danger" onclick="showSection('danger')" style="color: var(--danger);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Danger Zone</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Personal Info Section -->
+            <div class="section-card" id="section-personal">
+                <div class="section-header">
+                    <h2><i class="fas fa-user"></i> Personal Information</h2>
+                    <button class="edit-btn" onclick="toggleEdit('personal')">Edit</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="fullName" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Registration Number</label>
+                        <input type="text" class="form-input" id="regNumber" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" id="email" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input editable" id="phone" placeholder="+250 XXX XXX XXX">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-input editable" id="address" placeholder="Enter your address">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" class="form-input editable" id="dob">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nationality</label>
+                        <select class="form-select editable" id="nationality">
+                            <option value="Rwandan">Rwandan</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Details Section -->
+            <div class="section-card" id="section-academic">
+                <div class="section-header">
+                    <h2><i class="fas fa-graduation-cap"></i> Academic Details</h2>
+                    <button class="edit-btn" onclick="toggleEdit('academic')">Edit</button>
+                </div>
+                <div class="academic-info-display">
+                    <div class="info-item">
+                        <div class="info-label">College</div>
+                        <div class="info-value"><i class="fas fa-university"></i><span id="collegeDisplay">-</span></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Program</div>
+                        <div class="info-value"><i class="fas fa-book"></i><span id="programDisplay">-</span></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Year of Study</div>
+                        <div class="info-value"><i class="fas fa-calendar"></i><span id="yearDisplay">-</span></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Academic Year</div>
+                        <div class="info-value"><i class="fas fa-calendar-alt"></i><span id="academicYearDisplay">-</span></div>
+                    </div>
+                    <div class="info-item full-width">
+                        <div class="info-label">Student Status</div>
+                        <div class="info-value"><i class="fas fa-check-circle" style="color: var(--success);"></i> Active</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences Section -->
+            <div class="section-card" id="section-preferences">
+                <div class="section-header">
+                    <h2><i class="fas fa-sliders-h"></i> Reading Preferences</h2>
+                </div>
+                
+                <!-- Theme -->
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Dark Mode</h4>
+                        <p>Use dark theme for comfortable reading</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkModeToggle" checked onchange="updatePreference('darkMode', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Reading Mode -->
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Focus Reading Mode</h4>
+                        <p>Minimal interface with fewer distractions</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="focusModeToggle" onchange="updatePreference('focusMode', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Font Size -->
+                <div class="range-group">
+                    <div class="range-header">
+                        <h4>Default Font Size</h4>
+                        <span class="range-value" id="fontSizeValue">100%</span>
+                    </div>
+                    <input type="range" class="range-slider" id="fontSizeRange" min="80" max="140" value="100" onchange="updatePreference('fontSize', this.value)">
+                </div>
+
+                <!-- Line Height -->
+                <div class="range-group">
+                    <div class="range-header">
+                        <h4>Line Spacing</h4>
+                        <span class="range-value" id="lineHeightValue">1.6</span>
+                    </div>
+                    <input type="range" class="range-slider" id="lineHeightRange" min="1" max="2.5" step="0.1" value="1.6" onchange="updatePreference('lineHeight', this.value)">
+                </div>
+
+                <!-- Auto-save -->
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Auto-save Progress</h4>
+                        <p>Automatically save your reading position</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoSaveToggle" checked onchange="updatePreference('autoSave', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="section-card" id="section-notifications">
+                <div class="section-header">
+                    <h2><i class="fas fa-bell"></i> Notification Settings</h2>
+                </div>
+                <div class="notification-prefs">
+                    <div class="notification-row">
+                        <h4>New Module Alerts</h4>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="newModuleNotif" checked onchange="updateNotification('newModule', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notification-row">
+                        <h4>Assignment Reminders</h4>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="assignmentNotif" checked onchange="updateNotification('assignment', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notification-row">
+                        <h4>Exam Announcements</h4>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="examNotif" checked onchange="updateNotification('exam', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notification-row">
+                        <h4>Course Updates</h4>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="courseNotif" checked onchange="updateNotification('course', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notification-row">
+                        <h4>Discussion Replies</h4>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="discussionNotif" checked onchange="updateNotification('discussion', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="section-card" id="section-security">
+                <div class="section-header">
+                    <h2><i class="fas fa-shield-alt"></i> Security</h2>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-input editable" id="currentPassword" placeholder="Enter current password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-input editable" id="newPassword" placeholder="Enter new password">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-input editable" id="confirmPassword" placeholder="Confirm new password">
+                    </div>
+                </div>
+                <button class="save-btn" onclick="changePassword()" style="margin-top: 1rem;">
+                    <i class="fas fa-lock"></i> Update Password
+                </button>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="section-card danger-zone" id="section-danger">
+                <div class="section-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Danger Zone</h2>
+                </div>
+                <div class="danger-item">
+                    <div>
+                        <h4>Reset Academic Selections</h4>
+                        <p>Clear your college, program, and year selections</p>
+                    </div>
+                    <button class="danger-btn" onclick="confirmResetAcademic()">Reset</button>
+                </div>
+                <div class="danger-item">
+                    <div>
+                        <h4>Clear All Annotations</h4>
+                        <p>Delete all highlights, notes, and bookmarks</p>
+                    </div>
+                    <button class="danger-btn" onclick="confirmClearAnnotations()">Clear</button>
+                </div>
+                <div class="danger-item">
+                    <div>
+                        <h4>Delete Account</h4>
+                        <p>Permanently delete your account and all data</p>
+                    </div>
+                    <button class="danger-btn" onclick="confirmDeleteAccount()">Delete</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal">
+            <h3><i class="fas fa-exclamation-circle"></i> <span id="modalTitle">Confirm Action</span></h3>
+            <p id="modalMessage">Are you sure you want to proceed with this action?</p>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn confirm" id="modalConfirmBtn" onclick="confirmAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Changes saved successfully!</span>
+    </div>
+
+    <script>
+        // State
+        let currentUser = null;
+        let editingSection = null;
+        let pendingAction = null;
+
+        const collegeDisplayNames = {
+            'cass': 'College of Arts & Social Sciences',
+            'cbe': 'College of Business & Economics',
+            'cmhs': 'College of Medicine & Health Sciences',
+            'cst': 'College of Science & Technology',
+            'caff': 'College of Agriculture & Food Sciences',
+            'ce': 'College of Education',
+            'cvas': 'College of Veterinary & Animal Sciences'
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadPreferences();
+        });
+
+        function loadUserData() {
+            currentUser = JSON.parse(localStorage.getItem('ur_current_user') || {});
+            
+            // Update profile card
+            document.getElementById('profileName').textContent = currentUser.name || 'Student';
+            document.getElementById('profileEmail').textContent = currentUser.email || 'student@ur.ac.rw';
+            
+            const badgeText = `${currentUser.programCode || ''} | Year ${currentUser.year || 1}`;
+            document.getElementById('badgeText').textContent = badgeText;
+
+            // Update form fields
+            document.getElementById('fullName').value = currentUser.name || '';
+            document.getElementById('regNumber').value = currentUser.regNumber || '';
+            document.getElementById('email').value = currentUser.email || '';
+
+            // Update academic display
+            const college = collegeDisplayNames[currentUser.college] || currentUser.college;
+            document.getElementById('collegeDisplay').textContent = college;
+            document.getElementById('programDisplay').textContent = currentUser.program || '-';
+            document.getElementById('yearDisplay').textContent = `Year ${currentUser.year || '-'}`;
+            document.getElementById('academicYearDisplay').textContent = currentUser.academicYear || '-';
+
+            // Load saved preferences
+            const savedPrefs = JSON.parse(localStorage.getItem('userPreferences') || '{}');
+            document.getElementById('fontSizeRange').value = savedPrefs.fontSize || 100;
+            document.getElementById('lineHeightRange').value = savedPrefs.lineHeight || 1.6;
+            document.getElementById('fontSizeValue').textContent = `${savedPrefs.fontSize || 100}%`;
+            document.getElementById('lineHeightValue').textContent = savedPrefs.lineHeight || 1.6;
+        }
+
+        function loadPreferences() {
+            const prefs = JSON.parse(localStorage.getItem('userPreferences') || '{}');
+            document.getElementById('darkModeToggle').checked = prefs.darkMode !== false;
+            document.getElementById('focusModeToggle').checked = prefs.focusMode || false;
+            document.getElementById('autoSaveToggle').checked = prefs.autoSave !== false;
+
+            const notifs = JSON.parse(localStorage.getItem('notificationSettings') || '{}');
+            document.getElementById('newModuleNotif').checked = notifs.newModule !== false;
+            document.getElementById('assignmentNotif').checked = notifs.assignment !== false;
+            document.getElementById('examNotif').checked = notifs.exam !== false;
+            document.getElementById('courseNotif').checked = notifs.course !== false;
+            document.getElementById('discussionNotif').checked = notifs.discussion !== false;
+        }
+
+        function showSection(section) {
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.nav-item').classList.add('active');
+
+            // Show section
+            document.querySelectorAll('.section-card').forEach(card => card.style.display = 'none');
+            document.getElementById(`section-${section}`).style.display = 'block';
+        }
+
+        function toggleEdit(section) {
+            const inputs = document.querySelectorAll(`#section-${section} .form-input.editable, #section-${section} .form-select.editable`);
+            const btn = document.querySelector(`#section-${section} .edit-btn`);
+            
+            inputs.forEach(input => {
+                input.disabled = !input.disabled;
+            });
+
+            if (btn.classList.contains('editing')) {
+                btn.textContent = 'Edit';
+                btn.classList.remove('editing');
+                // Save changes
+                saveSection(section);
+            } else {
+                btn.textContent = 'Save';
+                btn.classList.add('editing');
+            }
+        }
+
+        function saveSection(section) {
+            if (section === 'personal') {
+                const phone = document.getElementById('phone').value;
+                const address = document.getElementById('address').value;
+                const dob = document.getElementById('dob').value;
+                const nationality = document.getElementById('nationality').value;
+                
+                currentUser.phone = phone;
+                currentUser.address = address;
+                currentUser.dob = dob;
+                currentUser.nationality = nationality;
+                
+                localStorage.setItem('ur_current_user', JSON.stringify(currentUser));
+            }
+            
+            showToast('Changes saved successfully!');
+        }
+
+        function saveAllChanges() {
+            // Save all editable fields
+            const phone = document.getElementById('phone').value;
+            const address = document.getElementById('address').value;
+            const dob = document.getElementById('dob').value;
+            const nationality = document.getElementById('nationality').value;
+            
+            currentUser.phone = phone;
+            currentUser.address = address;
+            currentUser.dob = dob;
+            currentUser.nationality = nationality;
+            
+            localStorage.setItem('ur_current_user', JSON.stringify(currentUser));
+            showToast('All changes saved successfully!');
+        }
+
+        function updatePreference(key, value) {
+            const prefs = JSON.parse(localStorage.getItem('userPreferences') || '{}');
+            prefs[key] = value;
+            localStorage.setItem('userPreferences', JSON.stringify(prefs));
+            
+            if (key === 'fontSize') {
+                document.getElementById('fontSizeValue').textContent = `${value}%`;
+            } else if (key === 'lineHeight') {
+                document.getElementById('lineHeightValue').textContent = value;
+            }
+            
+            showToast('Preference updated!');
+        }
+
+        function updateNotification(key, value) {
+            const notifs = JSON.parse(localStorage.getItem('notificationSettings') || '{}');
+            notifs[key] = value;
+            localStorage.setItem('notificationSettings', JSON.stringify(notifs));
+            showToast('Notification setting updated!');
+        }
+
+        function changePassword() {
+            const current = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            
+            if (!current || !newPass || !confirm) {
+                showToast('Please fill all password fields');
+                return;
+            }
+            
+            if (newPass !== confirm) {
+                showToast('Passwords do not match');
+                return;
+            }
+            
+            if (newPass.length < 8) {
+                showToast('Password must be at least 8 characters');
+                return;
+            }
+            
+            // In real app, validate current password
+            showToast('Password updated successfully!');
+            
+            // Clear fields
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+
+        function uploadPhoto() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const photo = document.getElementById('profilePhoto');
+                        photo.innerHTML = `<img src="${e.target.result}" alt="Profile Photo">`;
+                        photo.style.padding = '0';
+                        showToast('Photo uploaded successfully!');
+                        
+                        // Save to localStorage
+                        const prefs = JSON.parse(localStorage.getItem('userPreferences') || '{}');
+                        prefs.profilePhoto = e.target.result;
+                        localStorage.setItem('userPreferences', JSON.stringify(prefs));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+
+        // Danger zone actions
+        function confirmResetAcademic() {
+            pendingAction = 'resetAcademic';
+            showModal('Reset Academic Selections', 'This will clear your college, program, and year selections. You will need to redo the onboarding setup. Continue?');
+        }
+
+        function confirmClearAnnotations() {
+            pendingAction = 'clearAnnotations';
+            showModal('Clear All Annotations', 'This will permanently delete all your highlights, notes, and bookmarks. This action cannot be undone.');
+        }
+
+        function confirmDeleteAccount() {
+            pendingAction = 'deleteAccount';
+            showModal('Delete Account', 'Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone.');
+        }
+
+        function showModal(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            pendingAction = null;
+        }
+
+        function confirmAction() {
+            if (pendingAction === 'resetAcademic') {
+                localStorage.removeItem('ur_current_user');
+                window.location.href = 'student-onboarding.html';
+            } else if (pendingAction === 'clearAnnotations') {
+                localStorage.removeItem('userAnnotations');
+                showToast('All annotations cleared');
+            } else if (pendingAction === 'deleteAccount') {
+                localStorage.clear();
+                window.location.href = 'student-login.html';
+            }
+            closeModal();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('active');
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        function navigateTo(page) {
+            if (page === 'dashboard') {
+                window.location.href = 'student-dashboard.html';
+            } else if (page === 'courses') {
+                window.location.href = 'student-courses.html';
+            }
+        }
+    </script>
+</body>
+</html>

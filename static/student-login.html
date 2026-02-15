@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem;
+        }
+
+        .login-card {
+            background: var(--header-bg);
+            border-radius: 16px;
+            padding: 2.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.75rem;
+        }
+
+        .login-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(198, 153, 60, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.9rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .login-hint {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .login-hint a {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .login-hint a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .demo-section {
+            background: rgba(198, 153, 60, 0.1);
+            border: 1px solid rgba(198, 153, 60, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .demo-section h4 {
+            font-size: 0.8rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .demo-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .demo-btn {
+            padding: 0.6rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-btn:hover {
+            border-color: var(--accent);
+            background: rgba(198, 153, 60, 0.05);
+        }
+
+        .demo-btn i {
+            color: var(--accent);
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: var(--accent);
+        }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        .alert.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fas fa-university" style="color: white;"></i>
+                </div>
+                <h1>UR Open Courseware</h1>
+                <p>Sign in to access your course materials</p>
+            </div>
+
+            <div id="alertBox" class="alert"></div>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Registration Number</label>
+                    <input type="text" id="loginRegNumber" placeholder="e.g., 2200000000" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="your.email@example.com" required>
+                </div>
+                <button type="submit" class="btn btn-primary login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+
+            <div class="divider"><span>or</span></div>
+
+            <div class="demo-section">
+                <h4><i class="fas fa-flask"></i> Quick Demo Access</h4>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                    Try as a specific student type:
+                </p>
+                <div class="demo-options">
+                    <button class="demo-btn" onclick="demoLogin('law')">
+                        <i class="fas fa-gavel"></i>
+                        <span>Law Student (BH8LLB)</span>
+                    </button>
+                    <button class="demo-btn" onclick="demoLogin('cs')">
+                        <i class="fas fa-laptop-code"></i>
+                        <span>Computer Science (BH8CSC)</span>
+                    </button>
+                    <button class="demo-btn" onclick="demoLogin('medicine')">
+                        <i class="fas fa-user-md"></i>
+                        <span>Medicine (BH8MED)</span>
+                    </button>
+                </div>
+            </div>
+
+            <p class="login-hint">
+                New student? <a onclick="goToRegister()">Complete registration</a>
+            </p>
+
+            <div class="back-link" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back to home
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showAlert(type, message) {
+            const alert = document.getElementById('alertBox');
+            alert.className = `alert ${type} show`;
+            alert.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}`;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const regNumber = document.getElementById('loginRegNumber').value.trim();
+            const email = document.getElementById('loginEmail').value.trim();
+
+            if (!regNumber || !email) {
+                showAlert('error', 'Please fill in all fields');
+                return;
+            }
+
+            if (!email.includes('@') || !email.includes('.')) {
+                showAlert('error', 'Please enter a valid email address');
+                return;
+            }
+
+            const user = {
+                name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                email: email,
+                regNumber: regNumber,
+                onboardingComplete: false
+            };
+
+            localStorage.setItem('ur_current_user', JSON.stringify(user));
+            
+            showAlert('success', 'Login successful! Redirecting...');
+            
+            setTimeout(() => {
+                window.location.href = '/onboarding';
+            }, 1000);
+        }
+
+        function demoLogin(type) {
+            const demoUsers = {
+                'law': {
+                    regNumber: '2200101010',
+                    email: 'john.mugisha@ur.ac.rw',
+                    name: 'John Mugisha',
+                    college: 'cass',
+                    collegeName: 'College of Arts and Social Sciences',
+                    programCode: 'BH8LLB',
+                    program: 'Bachelor of Law',
+                    year: 2,
+                    academicYear: '2024-2025',
+                    onboardingComplete: true
+                },
+                'cs': {
+                    regNumber: '2200202020',
+                    email: 'alice.nirere@ur.ac.rw',
+                    name: 'Alice Nirere',
+                    college: 'cst',
+                    collegeName: 'College of Science and Technology',
+                    programCode: 'BH8CSC',
+                    program: 'Computer Science',
+                    year: 1,
+                    academicYear: '2024-2025',
+                    onboardingComplete: true
+                },
+                'medicine': {
+                    regNumber: '2200303030',
+                    email: 'bob.nkurunziza@ur.ac.rw',
+                    name: 'Bob Nkurunziza',
+                    college: 'cmhs',
+                    collegeName: 'College of Medicine and Health Sciences',
+                    programCode: 'BH8MED',
+                    program: 'Medicine',
+                    year: 3,
+                    academicYear: '2024-2025',
+                    onboardingComplete: true
+                }
+            };
+
+            const user = demoUsers[type];
+            localStorage.setItem('ur_current_user', JSON.stringify(user));
+            
+            showAlert('success', `Logged in as ${user.name} (${user.programCode})`);
+            
+            setTimeout(() => {
+                window.location.href = '/my-dashboard';
+            }, 1000);
+        }
+
+        function goToOnboarding() {
+            window.location.href = '/onboarding';
+        }
+
+        function goToRegister() {
+            window.location.href = '/register';
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(localStorage.getItem('ur_current_user') || '{}');
+            
+            if (user.onboardingComplete) {
+                window.location.href = '/my-dashboard';
+            }
+        });
+    </script>
+</body>
+</html>

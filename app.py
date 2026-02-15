@@ -8,17 +8,16 @@ import os
 import uuid
 import json
 import logging
-import smtplib
-from datetime import datetime, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
+from datetime import datetime, timedelta, timezone
 from functools import wraps
-from flask import Flask, request, jsonify, send_from_directory, redirect
+from flask import Flask, request, jsonify, send_from_directory, redirect, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import jwt
 
 # ==================== CONFIGURATION ====================
@@ -42,7 +41,20 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 # File uploads
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'jpg', 'jpeg', 'png', 'gif', 'zip', 'rar'}
+ALLOWED_EXTENSIONS = {'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    'txt',
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'zip',
+    'rar'}
 
 # Security
 app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
@@ -81,47 +93,54 @@ def log_action(action_type, user_id=None, details=None):
 # ==================== EMAIL NOTIFICATIONS ====================
 
 class EmailService:
-    """Email service for sending notifications"""
-    
+    """Email service using SendGrid REST API"""
+
     def __init__(self):
-        self.smtp_server = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-        self.smtp_port = int(os.environ.get('MAIL_PORT', 587))
-        self.smtp_user = os.environ.get('MAIL_USERNAME', '')
-        self.smtp_password = os.environ.get('MAIL_PASSWORD', '')
+        self.api_key = os.environ.get('SENDGRID_API_KEY', os.environ.get('MAIL_PASSWORD', ''))
         self.from_email = os.environ.get('MAIL_FROM', 'noreply@ur.ac.rw')
         self.from_name = os.environ.get('MAIL_FROM_NAME', 'UR Course Management')
-        
+        self.base_url = 'https://api.sendgrid.com/v3'
+
     def send(self, to_email, subject, html_body, text_body=None):
-        """Send an email notification"""
-        if not self.smtp_user or not self.smtp_password:
+        """Send an email via SendGrid REST API"""
+        if not self.api_key:
             logger.warning(f"Email not configured. Email would be sent to {to_email}: {subject}")
             return False
-            
+
         try:
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{self.from_name} <{self.from_email}>"
-            msg['To'] = to_email
-            
+            url = f"{self.base_url}/mail/send"
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+            payload = {
+                'personalizations': [{
+                    'to': [{'email': to_email}]
+                }],
+                'from': {
+                    'email': self.from_email,
+                    'name': self.from_name
+                },
+                'subject': subject,
+                'content': [
+                    {'type': 'text/html', 'value': html_body}
+                ]
+            }
+
             if text_body:
-                part = MIMEText(text_body, 'plain')
-                msg.attach(part)
-            
-            part = MIMEText(html_body, 'html')
-            msg.attach(part)
-            
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.starttls()
-                server.login(self.smtp_user, self.smtp_password)
-                server.send_message(msg)
-            
-            logger.info(f"Email sent to {to_email}: {subject}")
-            return True
-            
+                payload['content'].insert(0, {'type': 'text/plain', 'value': text_body})
+
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+
+            if response.status_code in [200, 202, 201]:
+                logger.info(f"Email sent to {to_email}: {subject}")
+                return                 logger.error("Failed to send email to {to_email}: {response.status_code} - {response.text}")
+                return False
+
         except Exception as e:
             logger.error(f"Failed to send email to {to_email}: {e}")
             return False
-    
+
     def send_magic_link(self, email, magic_link, user_name):
         """Send magic link email"""
         subject = "Your UR Course Management Login Link"
@@ -161,9 +180,9 @@ class EmailService:
         </html>
         """
         text_body = f"Hi {user_name},\n\nClick the link below to access your courses:\n{magic_link}\n\nThis link expires in 1 hour."
-        
+
         return self.send(email, subject, html_body, text_body)
-    
+
     def send_assignment_notification(self, email, assignment_title, module_name, due_date):
         """Send assignment notification email"""
         subject = f"New Assignment: {assignment_title}"
@@ -208,14 +227,14 @@ try:
         db=0,
         decode_responses=True
     )
-    
+
     def cache_api_response(key, data, ttl=300):
         """Cache API response in Redis"""
         try:
             redis_client.setex(key, ttl, json.dumps(data))
         except Exception as e:
             logger.warning(f"Redis cache set failed: {e}")
-    
+
     def get_cached_response(key):
         """Get cached API response from Redis"""
         try:
@@ -224,7 +243,7 @@ try:
         except Exception as e:
             logger.warning(f"Redis cache get failed: {e}")
             return None
-    
+
     def invalidate_cache(pattern):
         """Invalidate cache entries matching pattern"""
         try:
@@ -233,17 +252,17 @@ try:
                 redis_client.delete(*keys)
         except Exception as e:
             logger.warning(f"Redis cache invalidate failed: {e}")
-            
+
 except ImportError:
     redis_available = False
     logger.warning("Redis not installed. Caching disabled.")
-    
+
     def cache_api_response(key, data, ttl=300):
         pass
-    
+
     def get_cached_response(key):
         return None
-    
+
     def invalidate_cache(pattern):
         pass
 
@@ -260,7 +279,7 @@ class AuditLog(db.Model):
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     user = db.relationship('User', backref='audit_logs')
 
 def log_audit(action, resource_type=None, resource_id=None, details=None):
@@ -273,7 +292,7 @@ def log_audit(action, resource_type=None, resource_id=None, details=None):
             result = decode_token(token)
             if result['success']:
                 user_id = result['payload'].get('user_id')
-        
+
         log_entry = AuditLog(
             user_id=user_id,
             action=action,
@@ -298,19 +317,29 @@ class User(db.Model):
     role = db.Column(db.String(20), default='student')
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Social Profile Fields
     avatar_url = db.Column(db.String(500), default='')
     bio = db.Column(db.Text, default='')
     skills = db.Column(db.String(500), default='')
     interests = db.Column(db.String(500), default='')
-    
+
+    # Admin Fields
+    admin_role = db.Column(db.String(50))
+    assigned_college_id = db.Column(db.Integer)
+    assigned_program = db.Column(db.String(100))
+    admin_status = db.Column(db.String(20))
+
+    # Knowledge Commons
+    reputation = db.Column(db.Integer, default=0)
+    is_verified_lecturer = db.Column(db.Boolean, default=False)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-    
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-    
+
     def to_social_dict(self):
         return {
             'id': self.id,
@@ -381,7 +410,11 @@ class Module(db.Model):
     max_students = db.Column(db.Integer, default=100)
     is_enrollment_open = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
-    students = db.relationship('User', secondary=module_students, 
+    program = db.Column(db.String(100))
+    year_of_study = db.Column(db.Integer)
+    external_link = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    students = db.relationship('User', secondary=module_students,
                               backref=db.backref('modules', lazy='dynamic'),
                               lazy='subquery')
     documents = db.relationship('Document', backref='module', lazy='dynamic')
@@ -401,6 +434,29 @@ class Document(db.Model):
     download_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Announcement(db.Model):
+    """Announcements with scope (University, College, Program, Module)"""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(300), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    scope = db.Column(db.String(50), default='university')
+    
+    # Scope fields
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=True)
+    program = db.Column(db.String(100), nullable=True)
+    year = db.Column(db.Integer, nullable=True)
+    module_id = db.Column(db.Integer, db.ForeignKey('module.id'), nullable=True)
+    
+    # Metadata
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_by = db.Column(db.Integer)
+    
+    is_published = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    author = db.relationship('User', foreign_keys=[author_id], backref='announcements')
+
 # ==================== ASSIGNMENT MODELS ====================
 
 class Assignment(db.Model):
@@ -419,7 +475,7 @@ class Assignment(db.Model):
     late_penalty_percent = db.Column(db.Integer, default=10)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     module = db.relationship('Module', backref='assignments')
     submissions = db.relationship('Submission', backref='assignment', lazy='dynamic')
 
@@ -439,7 +495,7 @@ class Submission(db.Model):
     graded_at = db.Column(db.DateTime)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_late = db.Column(db.Boolean, default=False)
-    
+
     student = db.relationship('User', foreign_keys=[student_id], backref='submissions')
     grader = db.relationship('User', foreign_keys=[graded_by])
 
@@ -461,7 +517,7 @@ class Quiz(db.Model):
     available_from = db.Column(db.DateTime)
     available_until = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     module = db.relationship('Module', backref='quizzes')
     questions = db.relationship('Question', backref='quiz', lazy='dynamic', order_by='Question.order')
     submissions = db.relationship('QuizSubmission', backref='quiz', lazy='dynamic')
@@ -477,7 +533,7 @@ class Question(db.Model):
     order = db.Column(db.Integer, default=0)
     is_required = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     options = db.relationship('QuestionOption', backref='question', lazy='dynamic', cascade='all, delete-orphan')
 
 class QuestionOption(db.Model):
@@ -501,7 +557,7 @@ class QuizSubmission(db.Model):
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
     submitted_at = db.Column(db.DateTime)
     time_spent_seconds = db.Column(db.Integer)
-    
+
     student = db.relationship('User', backref='quiz_submissions')
     answers = db.relationship('QuizAnswer', backref='submission', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -515,7 +571,7 @@ class QuizAnswer(db.Model):
     is_correct = db.Column(db.Boolean)
     points_earned = db.Column(db.Float, default=0)
     answered_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     question = db.relationship('Question')
 
 # ==================== DISCUSSION FORUM MODELS ====================
@@ -529,7 +585,7 @@ class Forum(db.Model):
     is_published = db.Column(db.Boolean, default=True)
     allow_attachments = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     module = db.relationship('Module', backref='forums')
     posts = db.relationship('ForumPost', backref='forum', lazy='dynamic', order_by='ForumPost.created_at.desc()')
 
@@ -546,7 +602,7 @@ class ForumPost(db.Model):
     reply_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     author = db.relationship('User', backref='forum_posts')
     comments = db.relationship('ForumComment', backref='post', lazy='dynamic', order_by='ForumComment.created_at')
 
@@ -559,7 +615,7 @@ class ForumComment(db.Model):
     content = db.Column(db.Text, nullable=False)
     is_approved = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     author = db.relationship('User', backref='forum_comments')
     parent = db.relationship('ForumComment', remote_side=[id], backref='replies')
 
@@ -575,7 +631,7 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     link = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     user = db.relationship('User', backref='notifications')
 
 # ==================== GRADE BOOK MODELS ====================
@@ -596,7 +652,7 @@ class Grade(db.Model):
     semester_id = db.Column(db.Integer, db.ForeignKey('semester.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     student = db.relationship('User', backref='grades')
     module = db.relationship('Module')
     semester = db.relationship('Semester')
@@ -616,7 +672,7 @@ class Badge(db.Model):
     requirement_value = db.Column(db.Integer)  # Number required
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     user_badges = db.relationship('UserBadge', backref='badge', lazy='dynamic')
 
 class UserBadge(db.Model):
@@ -627,7 +683,7 @@ class UserBadge(db.Model):
     earned_at = db.Column(db.DateTime, default=datetime.utcnow)
     progress = db.Column(db.Integer, default=0)
     is_completed = db.Column(db.Boolean, default=False)
-    
+
     user = db.relationship('User', backref='user_badges')
 
 class PointTransaction(db.Model):
@@ -640,7 +696,7 @@ class PointTransaction(db.Model):
     source_id = db.Column(db.String(100))  # ID of related entity
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     user = db.relationship('User', backref='point_transactions')
 
 class Streak(db.Model):
@@ -653,7 +709,7 @@ class Streak(db.Model):
     last_activity_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     user = db.relationship('User', backref='streaks')
 
 class Leaderboard(db.Model):
@@ -666,7 +722,7 @@ class Leaderboard(db.Model):
     rank = db.Column(db.Integer)
     score = db.Column(db.Integer, default=0)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     user = db.relationship('User')
 
 # ==================== ANALYTICS MODELS ====================
@@ -681,7 +737,7 @@ class AnalyticsEvent(db.Model):
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     user = db.relationship('User', backref='analytics_events')
 
 class PerformanceMetrics(db.Model):
@@ -694,7 +750,7 @@ class PerformanceMetrics(db.Model):
     period_start = db.Column(db.Date)
     period_end = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     user = db.relationship('User', backref='performance_metrics')
     module = db.relationship('Module')
 
@@ -709,7 +765,7 @@ class StudySession(db.Model):
     pages_viewed = db.Column(db.Integer, default=0)
     resources_accessed = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     user = db.relationship('User', backref='study_sessions')
     module = db.relationship('Module')
 
@@ -730,11 +786,11 @@ class SocialPost(db.Model):
     is_pinned = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     author = db.relationship('User', backref='social_posts')
     likes = db.relationship('SocialLike', backref='post', lazy='dynamic', cascade='all, delete-orphan')
     comments = db.relationship('SocialComment', backref='post', lazy='dynamic', order_by='SocialComment.created_at.asc()')
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -759,7 +815,7 @@ class SocialLike(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('social_post.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='_post_user_like_uc'),)
 
 
@@ -773,10 +829,10 @@ class SocialComment(db.Model):
     likes_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     author = db.relationship('User', backref='social_comments')
     parent = db.relationship('SocialComment', remote_side=[id], backref='replies')
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -798,9 +854,9 @@ class SocialFollow(db.Model):
     follower_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     followed_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     __table_args__ = (db.UniqueConstraint('follower_id', 'followed_id', name='_follow_uc'),)
-    
+
     follower = db.relationship('User', foreign_keys=[follower_id], backref='following')
     followed = db.relationship('User', foreign_keys=[followed_id], backref='followers')
 
@@ -815,12 +871,12 @@ class FriendRequest(db.Model):
     is_quick_friend = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     __table_args__ = (db.UniqueConstraint('from_user_id', 'to_user_id', name='_friend_request_uc'),)
-    
+
     from_user = db.relationship('User', foreign_keys=[from_user_id], backref='friend_requests_sent')
     to_user = db.relationship('User', foreign_keys=[to_user_id], backref='friend_requests_received')
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -844,8 +900,106 @@ class SocialMention(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     mentioned_name = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     mentioned_by = db.relationship('User', foreign_keys=[mentioned_by_id], backref='mentions_made')
+
+
+class KnowledgePost(db.Model):
+    """Knowledge Commons posts"""
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(300), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    post_type = db.Column(db.String(20), default='insight')
+    faculty_code = db.Column(db.String(20))
+    course_code = db.Column(db.String(50))
+    course_name = db.Column(db.String(200))
+    tags = db.Column(db.String(500))
+    is_anonymous = db.Column(db.Boolean, default=False)
+    is_flagged = db.Column(db.Boolean, default=False)
+    quality_score = db.Column(db.Float, default=0.0)
+    likes = db.Column(db.Integer, default=0)
+    views = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    author = db.relationship('User', backref='knowledge_posts')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'author': self.author.name if not self.is_anonymous else 'Anonymous',
+            'author_id': self.author_id,
+            'title': self.title,
+            'content': self.content,
+            'post_type': self.post_type,
+            'faculty_code': self.faculty_code,
+            'course_code': self.course_code,
+            'course_name': self.course_name,
+            'tags': [t.strip() for t in self.tags.split(',')] if self.tags else [],
+            'is_anonymous': self.is_anonymous,
+            'likes': self.likes,
+            'views': self.views,
+            'created_at': self.created_at.isoformat(),
+            'quality_score': self.quality_score
+        }
+
+class KnowledgePostLike(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('knowledge_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='_kpost_user_like_uc'),)
+
+class KnowledgeAnswer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('knowledge_post.id'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    is_verified = db.Column(db.Boolean, default=False)
+    helpful_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    author = db.relationship('User', backref='knowledge_answers')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'author': self.author.name,
+            'author_id': self.author_id,
+            'content': self.content,
+            'is_verified': self.is_verified,
+            'helpful_count': self.helpful_count,
+            'created_at': self.created_at.isoformat()
+        }
+
+class HelpfulAnswer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    answer_id = db.Column(db.Integer, db.ForeignKey('knowledge_answer.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('answer_id', 'user_id', name='_answer_user_helpful_uc'),)
+
+class UserFollow(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    follower_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    following_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('follower_id', 'following_id', name='_user_follow_uc'),)
+
+class ContentReport(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    report_type = db.Column(db.String(50))
+    content_id = db.Column(db.Integer)
+    content_type = db.Column(db.String(50))
+    reason = db.Column(db.Text)
+    reported_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    status = db.Column(db.String(20), default='pending')
+    resolved_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+    resolution_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Conversation(db.Model):
@@ -856,11 +1010,11 @@ class Conversation(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     participants = db.relationship('ConversationParticipant', backref='conversation', lazy='dynamic', cascade='all, delete-orphan')
     messages = db.relationship('DirectMessage', backref='conversation', lazy='dynamic', order_by='DirectMessage.created_at.desc()')
-    
+
     def to_dict(self, current_user_id=None):
         last_message = self.messages.first()
         unread_count = 0
@@ -874,7 +1028,7 @@ class Conversation(db.Model):
                 ).filter(
                     DirectMessage.created_at > participant.last_read_at
                 ).count()
-        
+
         return {
             'id': self.id,
             'title': self.title or 'Untitled Conversation',
@@ -895,9 +1049,9 @@ class ConversationParticipant(db.Model):
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_read_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_admin = db.Column(db.Boolean, default=False)
-    
+
     __table_args__ = (db.UniqueConstraint('conversation_id', 'user_id', name='_conversation_user_uc'),)
-    
+
     user = db.relationship('User', backref='conversations')
 
 
@@ -911,9 +1065,9 @@ class DirectMessage(db.Model):
     file_url = db.Column(db.String(500), nullable=True)
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     sender = db.relationship('User', backref='sent_messages')
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -941,7 +1095,7 @@ class ActivityFeed(db.Model):
     link = db.Column(db.String(500), nullable=True)
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     source_user = db.relationship('User', foreign_keys=[source_user_id], backref='activities_caused')
 
 
@@ -956,11 +1110,11 @@ class StudyGroup(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     created_by = db.relationship('User', backref='created_study_groups')
     module = db.relationship('Module', backref='study_groups')
     members = db.relationship('StudyGroupMember', backref='group', lazy='dynamic', cascade='all, delete-orphan')
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -983,9 +1137,9 @@ class StudyGroupMember(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     role = db.Column(db.String(20), default='member')
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     __table_args__ = (db.UniqueConstraint('group_id', 'user_id', name='_group_user_uc'),)
-    
+
     user = db.relationship('User', backref='study_groups')
 
 # ==================== AUTH HELPERS ====================
@@ -995,8 +1149,8 @@ def generate_token(user_id, token_type='access'):
         expires = timedelta(hours=1)
         payload = {
             'user_id': user_id,
-            'exp': datetime.utcnow() + expires,
-            'iat': datetime.utcnow(),
+            'exp': datetime.now(timezone.utc) + expires,
+            'iat': datetime.now(timezone.utc),
             'type': 'magic',
             'magic_id': str(uuid.uuid4())
         }
@@ -1004,8 +1158,8 @@ def generate_token(user_id, token_type='access'):
         expires = timedelta(minutes=60*24)
         payload = {
             'user_id': user_id,
-            'exp': datetime.utcnow() + expires,
-            'iat': datetime.utcnow(),
+            'exp': datetime.now(timezone.utc) + expires,
+            'iat': datetime.now(timezone.utc),
             'type': 'access'
         }
     return jwt.encode(payload, app.config['JWT_SECRET'], algorithm='HS256')
@@ -1036,10 +1190,10 @@ def auth_login():
     """Magic link login - send link to email"""
     data = request.get_json()
     email = data.get('email', '').strip().lower()
-    
+
     if not email:
         return jsonify({'error': 'Email required'}), 400
-    
+
     # Find or create user
     user = User.query.filter_by(email=email).first()
     is_new_user = False
@@ -1053,26 +1207,26 @@ def auth_login():
         db.session.commit()
         is_new_user = True
         logger.info(f"New user created: {email}")
-    
+
     # Generate magic link
     magic_token = generate_token(user.id, 'magic')
-    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:5000')
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://ur-academia.onrender.com')
     magic_link = f"{frontend_url}/auth/magic-login?token={magic_token}"
-    
+
     # Send email notification
     email_sent = email_service.send_magic_link(email, magic_link, user.name)
-    
+
     # Log the action
     log_audit('magic_link_sent', details={
         'email': email,
         'is_new_user': is_new_user,
         'email_sent': email_sent
     })
-    
+
     # In development, still show link in logs
     if not email_sent or os.environ.get('FLASK_ENV') != 'production':
         logger.info(f"Magic Link for {email}: {magic_link}")
-    
+
     return jsonify({
         'message': 'Login link sent to your email',
         'email': email,
@@ -1085,22 +1239,22 @@ def magic_login():
     token = request.args.get('token')
     if not token:
         return jsonify({'error': 'Invalid magic link'}), 400
-    
+
     result = decode_token(token)
     if not result['success']:
         return jsonify({'error': result['error']}), 400
-    
+
     if result['payload'].get('type') != 'magic':
         return jsonify({'error': 'Invalid token type'}), 400
-    
+
     user = User.query.get(result['payload']['user_id'])
     if not user or not user.is_active:
         return jsonify({'error': 'User not found or inactive'}), 404
-    
+
     # Generate access token
     access_token = generate_token(user.id, 'access')
-    
-    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:5000')
+
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://ur-academia.onrender.com')
     return redirect(f"{frontend_url}/?token={access_token}")
 
 @app.route('/auth/resend', methods=['POST'])
@@ -1108,17 +1262,17 @@ def resend_magic_link():
     """Resend magic link"""
     data = request.get_json()
     email = data.get('email', '').strip().lower()
-    
+
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
-    
+
     magic_token = generate_token(user.id, 'magic')
-    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:5000')
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://ur-academia.onrender.com')
     magic_link = f"{frontend_url}/auth/magic-login?token={magic_token}"
-    
+
     print(f"Resending magic link to {email}: {magic_link}")
-    
+
     return jsonify({'message': 'Magic link resent'}), 200
 
 @app.route('/auth/me', methods=['GET'])
@@ -1127,7 +1281,7 @@ def auth_me():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     return jsonify({
         'user': {
             'id': user.id,
@@ -1143,7 +1297,11 @@ def auth_logout():
 
 # ==================== ADMIN LOGIN (Hardcoded) ====================
 
-ADMIN_EMAIL = 'admin@ur.ac.rw'
+# Admin credentials - multiple emails, same password
+ADMIN_EMAILS = [
+    'admin@ur.ac.rw',
+    'htuyishi@gmail.com',
+]
 ADMIN_PASSWORD = 'password123'
 
 @app.route('/auth/admin-login', methods=['POST'])
@@ -1152,10 +1310,11 @@ def admin_login():
     data = request.get_json()
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
-    
-    if email != ADMIN_EMAIL or password != ADMIN_PASSWORD:
+
+    # Check if email is in admin list and password matches
+    if email not in ADMIN_EMAILS or password != ADMIN_PASSWORD:
         return jsonify({'error': 'Invalid credentials'}), 401
-    
+
     # Find or create admin user
     user = User.query.filter_by(email=email).first()
     if not user:
@@ -1169,10 +1328,10 @@ def admin_login():
     elif user.role != 'admin':
         user.role = 'admin'
         db.session.commit()
-    
+
     # Generate access token
     access_token = generate_token(user.id, 'access')
-    
+
     return jsonify({
         'message': 'Login successful',
         'user': {
@@ -1220,21 +1379,34 @@ def get_college(college_id):
 
 @app.route('/api/schools', methods=['GET'])
 def get_schools():
-    college_id = request.args.get('college_id')
-    query = School.query.filter_by(is_active=True)
-    if college_id:
-        query = query.filter_by(college_id=college_id)
-    schools = query.all()
-    return jsonify({
-        'schools': [{
-            'id': s.id,
-            'code': s.code,
-            'name': s.name,
-            'college_id': s.college_id,
-            'college_name': s.college.name,
-            'module_count': s.modules.count()
-        } for s in schools]
-    }), 200
+    try:
+        college_id = request.args.get('college_id')
+        query = School.query.filter_by(is_active=True)
+        if college_id:
+            query = query.filter_by(college_id=college_id)
+        schools = query.all()
+
+        school_list = []
+        for s in schools:
+            data = {
+                'id': s.id,
+                'code': s.code,
+                'name': s.name,
+                'college_id': s.college_id
+            }
+            # Safely access relationships to prevent 500 errors if DB is inconsistent
+            try:
+                data['college_name'] = s.college.name if s.college else 'Unknown'
+                data['module_count'] = s.modules.count()
+            except Exception:
+                data['college_name'] = 'Unknown'
+                data['module_count'] = 0
+            school_list.append(data)
+
+        return jsonify({'schools': school_list}), 200
+    except Exception as e:
+        logger.error(f"Error fetching schools: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/academic-years', methods=['GET'])
 def get_academic_years():
@@ -1275,23 +1447,29 @@ def get_academic_year(year_id):
 def get_modules():
     semester_id = request.args.get('semester_id')
     school_id = request.args.get('school_id')
+    program = request.args.get('program')
+    year = request.args.get('year')
     search = request.args.get('search')
-    
+
     query = Module.query.filter_by(is_active=True)
-    
+
     if semester_id:
         query = query.filter_by(semester_id=semester_id)
     if school_id:
         query = query.filter_by(school_id=school_id)
+    if program:
+        query = query.filter_by(program=program)
+    if year:
+        query = query.filter_by(year_of_study=year)
     if search:
         search_term = f"%{search}%"
         query = query.filter(
-            (Module.name.ilike(search_term)) | 
+            (Module.name.ilike(search_term)) |
             (Module.module_code.ilike(search_term))
         )
-    
+
     modules = query.order_by(Module.name).limit(100).all()
-    
+
     return jsonify({
         'modules': [{
             'id': m.id,
@@ -1299,7 +1477,7 @@ def get_modules():
             'name': m.name,
             'description': m.description,
             'school_id': m.school_id,
-            'school_name': m.school.name,
+            'school_name': m.school.name if m.school else 'Unknown',
             'semester_id': m.semester_id,
             'semester_name': m.semester.name,
             'credits': m.credits,
@@ -1307,7 +1485,9 @@ def get_modules():
             'tags': [t.strip() for t in m.tags.split(',')] if m.tags else [],
             'student_count': len(m.students),
             'document_count': m.documents.count(),
-            'is_enrollment_open': m.is_enrollment_open
+            'is_enrollment_open': m.is_enrollment_open,
+            'year_of_study': m.year_of_study,
+            'created_at': m.created_at.isoformat() if m.created_at else None
         } for m in modules]
     }), 200
 
@@ -1315,7 +1495,7 @@ def get_modules():
 def get_module(module_id):
     module = Module.query.get_or_404(module_id)
     documents = module.documents.filter_by(is_published=True).all()
-    
+
     return jsonify({
         'module': {
             'id': module.id,
@@ -1323,9 +1503,9 @@ def get_module(module_id):
             'name': module.name,
             'description': module.description,
             'school_id': module.school_id,
-            'school_name': module.school.name,
-            'college_id': module.school.college.id,
-            'college_name': module.school.college.name,
+            'school_name': module.school.name if module.school else 'Unknown',
+            'college_id': module.school.college.id if module.school and module.school.college else None,
+            'college_name': module.school.college.name if module.school and module.school.college else 'Unknown',
             'semester_id': module.semester_id,
             'semester_name': module.semester.name,
             'academic_year_id': module.semester.academic_year.id,
@@ -1357,30 +1537,30 @@ def get_module(module_id):
 def get_assignments():
     """List assignments (filtered by module, published status)"""
     module_id = request.args.get('module_id')
-    
+
     query = Assignment.query
-    
+
     if module_id:
         query = query.filter_by(module_id=module_id)
-    
+
     # Only show published assignments to students
     user = get_current_user()
     if user and user.role not in ['admin', 'instructor']:
         query = query.filter_by(is_published=True)
-    
+
     assignments = query.order_by(Assignment.due_date).all()
-    
+
     # Cache for public endpoints
     cache_key = f"assignments:{module_id or 'all'}:{user.id if user else 'anon'}"
     cached = get_cached_response(cache_key)
     if cached:
         return jsonify(cached), 200
-    
+
     result = {
         'assignments': [{
             'id': a.id,
             'module_id': a.module_id,
-            'module_name': a.module.name,
+            'module_name': a.module.name if a.module else 'Unknown',
             'title': a.title,
             'description': a.description,
             'due_date': a.due_date.isoformat(),
@@ -1393,7 +1573,7 @@ def get_assignments():
             'created_at': a.created_at.isoformat()
         } for a in assignments]
     }
-    
+
     cache_api_response(cache_key, result, ttl=300)
     return jsonify(result), 200
 
@@ -1401,17 +1581,17 @@ def get_assignments():
 def get_assignment(assignment_id):
     """Get assignment details"""
     assignment = Assignment.query.get_or_404(assignment_id)
-    
+
     # Check if user has access
     user = get_current_user()
     if not assignment.is_published and (not user or user.role not in ['admin', 'instructor']):
         return jsonify({'error': 'Assignment not found'}), 404
-    
+
     return jsonify({
         'assignment': {
             'id': assignment.id,
             'module_id': assignment.module_id,
-            'module_name': assignment.module.name,
+            'module_name': assignment.module.name if assignment.module else 'Unknown',
             'title': assignment.title,
             'description': assignment.description,
             'instructions': assignment.instructions,
@@ -1433,9 +1613,9 @@ def create_assignment():
     user = get_current_user()
     if not user or user.role not in ['admin', 'instructor']:
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     data = request.get_json()
-    
+
     assignment = Assignment(
         module_id=data['module_id'],
         title=data['title'],
@@ -1449,10 +1629,10 @@ def create_assignment():
         allow_late_submission=data.get('allow_late_submission', True),
         late_penalty_percent=data.get('late_penalty_percent', 10)
     )
-    
+
     db.session.add(assignment)
     db.session.commit()
-    
+
     # Notify enrolled students
     module = Module.query.get(data['module_id'])
     for student in module.students:
@@ -1463,14 +1643,14 @@ def create_assignment():
                 module.name,
                 assignment.due_date.strftime('%Y-%m-%d %H:%M')
             )
-    
+
     log_audit('assignment_created', 'assignment', assignment.id, {
         'title': assignment.title,
         'module_id': assignment.module_id
     })
-    
+
     invalidate_cache('assignments:*')
-    
+
     return jsonify({
         'message': 'Assignment created successfully',
         'assignment': {
@@ -1486,25 +1666,25 @@ def submit_assignment(assignment_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     assignment = Assignment.query.get_or_404(assignment_id)
-    
+
     if not assignment.is_published:
         return jsonify({'error': 'Assignment not available'}), 403
-    
+
     # Check if due date has passed
     is_late = datetime.utcnow() > assignment.due_date
     if is_late and not assignment.allow_late_submission:
         return jsonify({'error': 'Late submissions not allowed'}), 400
-    
+
     data = request.get_json()
-    
+
     # Check for existing submission
     existing = Submission.query.filter_by(
         assignment_id=assignment_id,
         student_id=user.id
     ).first()
-    
+
     if existing:
         # Update existing submission
         existing.content = data.get('content', existing.content)
@@ -1522,16 +1702,16 @@ def submit_assignment(assignment_id):
             is_late=is_late
         )
         db.session.add(submission)
-    
+
     db.session.commit()
-    
+
     log_audit('assignment_submitted', 'submission', submission.id, {
         'assignment_id': assignment_id,
         'is_late': is_late
     })
-    
+
     invalidate_cache(f'submissions:{assignment_id}:*')
-    
+
     return jsonify({
         'message': 'Assignment submitted successfully',
         'submission': {
@@ -1548,9 +1728,9 @@ def get_my_submissions():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     submissions = Submission.query.filter_by(student_id=user.id).all()
-    
+
     return jsonify({
         'submissions': [{
             'id': s.id,
@@ -1571,13 +1751,13 @@ def get_submission(submission_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     submission = Submission.query.get_or_404(submission_id)
-    
+
     # Check access
     if user.role not in ['admin', 'instructor'] and submission.student_id != user.id:
         return jsonify({'error': 'Access denied'}), 403
-    
+
     return jsonify({
         'submission': {
             'id': submission.id,
@@ -1602,24 +1782,24 @@ def grade_submission(submission_id):
     user = get_current_user()
     if not user or user.role not in ['admin', 'instructor']:
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     submission = Submission.query.get_or_404(submission_id)
-    
+
     data = request.get_json()
-    
+
     submission.score = data.get('score')
     submission.feedback = data.get('feedback')
     submission.graded_by = user.id
     submission.graded_at = datetime.utcnow()
     submission.status = 'graded'
-    
+
     db.session.commit()
-    
+
     log_audit('submission_graded', 'submission', submission.id, {
         'score': submission.score,
         'graded_by': user.id
     })
-    
+
     return jsonify({
         'message': 'Submission graded successfully',
         'submission': {
@@ -1635,23 +1815,23 @@ def grade_submission(submission_id):
 def get_quizzes():
     """List quizzes (filtered by module)"""
     module_id = request.args.get('module_id')
-    
+
     query = Quiz.query
-    
+
     if module_id:
         query = query.filter_by(module_id=module_id)
-    
+
     user = get_current_user()
     if user and user.role not in ['admin', 'instructor']:
         query = query.filter_by(is_published=True)
-    
+
     quizzes = query.order_by(Quiz.created_at.desc()).all()
-    
+
     return jsonify({
         'quizzes': [{
             'id': q.id,
             'module_id': q.module_id,
-            'module_name': q.module.name,
+            'module_name': q.module.name if q.module else 'Unknown',
             'title': q.title,
             'description': q.description,
             'quiz_type': q.quiz_type,
@@ -1669,14 +1849,14 @@ def get_quizzes():
 def get_quiz(quiz_id):
     """Get quiz details with questions"""
     quiz = Quiz.query.get_or_404(quiz_id)
-    
+
     user = get_current_user()
     if not quiz.is_published and (not user or user.role not in ['admin', 'instructor']):
         return jsonify({'error': 'Quiz not found'}), 404
-    
+
     # Don't show correct answers to students before submission
     questions = quiz.questions.all()
-    
+
     return jsonify({
         'quiz': {
             'id': quiz.id,
@@ -1711,9 +1891,9 @@ def create_quiz():
     user = get_current_user()
     if not user or user.role not in ['admin', 'instructor']:
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     data = request.get_json()
-    
+
     quiz = Quiz(
         module_id=data['module_id'],
         title=data['title'],
@@ -1728,10 +1908,10 @@ def create_quiz():
         available_from=datetime.fromisoformat(data['available_from']) if data.get('available_from') else None,
         available_until=datetime.fromisoformat(data['available_until']) if data.get('available_until') else None
     )
-    
+
     db.session.add(quiz)
     db.session.commit()
-    
+
     # Add questions if provided
     if data.get('questions'):
         for i, q_data in enumerate(data['questions']):
@@ -1746,7 +1926,7 @@ def create_quiz():
             )
             db.session.add(question)
             db.session.flush()
-            
+
             # Add options for multiple choice
             if q_data.get('options'):
                 for j, opt_data in enumerate(q_data['options']):
@@ -1757,12 +1937,12 @@ def create_quiz():
                         order=j
                     )
                     db.session.add(option)
-    
+
     db.session.commit()
-    
+
     log_audit('quiz_created', 'quiz', quiz.id, {'title': quiz.title})
     invalidate_cache('quizzes:*')
-    
+
     return jsonify({
         'message': 'Quiz created successfully',
         'quiz': {'id': quiz.id, 'title': quiz.title}
@@ -1774,21 +1954,21 @@ def start_quiz(quiz_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     quiz = Quiz.query.get_or_404(quiz_id)
-    
+
     if not quiz.is_published:
         return jsonify({'error': 'Quiz not available'}), 403
-    
+
     # Check attempt count
     attempts = QuizSubmission.query.filter_by(
         quiz_id=quiz_id,
         student_id=user.id
     ).count()
-    
+
     if attempts >= quiz.max_attempts:
         return jsonify({'error': 'Maximum attempts reached'}), 400
-    
+
     # Create submission
     submission = QuizSubmission(
         quiz_id=quiz_id,
@@ -1797,7 +1977,7 @@ def start_quiz(quiz_id):
     )
     db.session.add(submission)
     db.session.commit()
-    
+
     return jsonify({
         'message': 'Quiz started',
         'submission': {
@@ -1813,42 +1993,42 @@ def submit_quiz(quiz_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     quiz = Quiz.query.get_or_404(quiz_id)
     data = request.get_json()
-    
+
     submission_id = data.get('submission_id')
     answers = data.get('answers', [])
-    
+
     submission = QuizSubmission.query.get_or_404(submission_id)
-    
+
     if submission.student_id != user.id:
         return jsonify({'error': 'Access denied'}), 403
-    
+
     if submission.submitted_at:
         return jsonify({'error': 'Already submitted'}), 400
-    
+
     # Calculate score
     total_points = 0
     earned_points = 0
-    
+
     for ans_data in answers:
         question = Question.query.get(ans_data['question_id'])
         if not question:
             continue
-            
+
         total_points += question.points
-        
+
         is_correct = False
         points_earned = 0
-        
+
         if question.question_type == 'multiple_choice':
             # Get correct option
             correct_option = QuestionOption.query.filter_by(
                 question_id=question.id,
                 is_correct=True
             ).first()
-            
+
             if correct_option and str(correct_option.id) in str(ans_data.get('selected_options', [])):
                 is_correct = True
                 points_earned = question.points
@@ -1857,16 +2037,16 @@ def submit_quiz(quiz_id):
                 question_id=question.id,
                 is_correct=True
             ).first()
-            
+
             if correct_option and str(correct_option.id) == str(ans_data.get('selected_options', [])):
                 is_correct = True
                 points_earned = question.points
         elif question.question_type == 'short_answer':
             # Manual grading required - auto-fail for now
             points_earned = 0
-        
+
         earned_points += points_earned
-        
+
         # Save answer
         answer = QuizAnswer(
             submission_id=submission.id,
@@ -1877,26 +2057,26 @@ def submit_quiz(quiz_id):
             points_earned=points_earned
         )
         db.session.add(answer)
-    
+
     # Calculate final score
     percentage = (earned_points / total_points * 100) if total_points > 0 else 0
     passed = percentage >= quiz.passing_score
-    
+
     submission.score = earned_points
     submission.max_score = total_points
     submission.percentage = percentage
     submission.passed = passed
     submission.submitted_at = datetime.utcnow()
     submission.time_spent_seconds = int((datetime.utcnow() - submission.started_at).total_seconds())
-    
+
     db.session.commit()
-    
+
     log_audit('quiz_submitted', 'quiz_submission', submission.id, {
         'score': earned_points,
         'percentage': percentage,
         'passed': passed
     })
-    
+
     return jsonify({
         'message': 'Quiz submitted successfully',
         'result': {
@@ -1914,12 +2094,12 @@ def get_quiz_attempts(quiz_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     attempts = QuizSubmission.query.filter_by(
         quiz_id=quiz_id,
         student_id=user.id
     ).order_by(QuizSubmission.attempt_number).all()
-    
+
     return jsonify({
         'attempts': [{
             'id': a.id,
@@ -1940,19 +2120,19 @@ def get_quiz_attempts(quiz_id):
 def get_forums():
     """List forums"""
     module_id = request.args.get('module_id')
-    
+
     query = Forum.query.filter_by(is_published=True)
-    
+
     if module_id:
         query = query.filter_by(module_id=module_id)
-    
+
     forums = query.all()
-    
+
     return jsonify({
         'forums': [{
             'id': f.id,
             'module_id': f.module_id,
-            'module_name': f.module.name,
+            'module_name': f.module.name if f.module else 'Unknown',
             'title': f.title,
             'description': f.description,
             'post_count': f.posts.count(),
@@ -1964,12 +2144,12 @@ def get_forums():
 def get_forum(forum_id):
     """Get forum with posts"""
     forum = Forum.query.get_or_404(forum_id)
-    
+
     posts = forum.posts.filter_by(is_published=True).order_by(
         ForumPost.is_pinned.desc(),
         ForumPost.created_at.desc()
     ).limit(50).all()
-    
+
     return jsonify({
         'forum': {
             'id': forum.id,
@@ -1997,26 +2177,26 @@ def create_forum_post(forum_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     forum = Forum.query.get_or_404(forum_id)
-    
+
     data = request.get_json()
-    
+
     post = ForumPost(
         forum_id=forum_id,
         author_id=user.id,
         title=data['title'],
         content=data['content']
     )
-    
+
     db.session.add(post)
     db.session.commit()
-    
+
     log_audit('forum_post_created', 'forum_post', post.id, {
         'forum_id': forum_id,
         'title': post.title
     })
-    
+
     return jsonify({
         'message': 'Post created successfully',
         'post': {
@@ -2030,13 +2210,13 @@ def create_forum_post(forum_id):
 def get_post(post_id):
     """Get post with comments"""
     post = ForumPost.query.get_or_404(post_id)
-    
+
     # Increment view count
     post.view_count += 1
     db.session.commit()
-    
+
     comments = post.comments.filter_by(is_approved=True).all()
-    
+
     return jsonify({
         'post': {
             'id': post.id,
@@ -2065,28 +2245,28 @@ def create_comment(post_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     post = ForumPost.query.get_or_404(post_id)
-    
+
     if post.is_locked:
         return jsonify({'error': 'Post is locked'}), 400
-    
+
     data = request.get_json()
-    
+
     comment = ForumComment(
         post_id=post_id,
         author_id=user.id,
         parent_id=data.get('parent_id'),
         content=data['content']
     )
-    
+
     db.session.add(comment)
-    
+
     # Update reply count
     post.reply_count += 1
-    
+
     db.session.commit()
-    
+
     # Notify post author
     if post.author_id != user.id:
         notification = Notification(
@@ -2098,7 +2278,7 @@ def create_comment(post_id):
         )
         db.session.add(notification)
         db.session.commit()
-    
+
     return jsonify({
         'message': 'Comment added successfully',
         'comment': {
@@ -2115,16 +2295,16 @@ def get_notifications():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     notifications = Notification.query.filter_by(
         user_id=user.id
     ).order_by(Notification.created_at.desc()).limit(50).all()
-    
+
     unread_count = Notification.query.filter_by(
         user_id=user.id,
         is_read=False
     ).count()
-    
+
     return jsonify({
         'notifications': [{
             'id': n.id,
@@ -2144,15 +2324,15 @@ def mark_notification_read(notification_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     notification = Notification.query.filter_by(
         id=notification_id,
         user_id=user.id
     ).first_or_404()
-    
+
     notification.is_read = True
     db.session.commit()
-    
+
     return jsonify({'message': 'Marked as read'}), 200
 
 @app.route('/api/notifications/read-all', methods=['POST'])
@@ -2161,13 +2341,13 @@ def mark_all_notifications_read():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     Notification.query.filter_by(
         user_id=user.id,
         is_read=False
     ).update({'is_read': True})
     db.session.commit()
-    
+
     return jsonify({'message': 'All notifications marked as read'}), 200
 
 # ==================== GRADE BOOK API ====================
@@ -2178,23 +2358,23 @@ def get_my_grades():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     grades = Grade.query.filter_by(
         student_id=user.id
     ).order_by(Grade.created_at.desc()).all()
-    
+
     # Calculate GPA
     completed_courses = [g for g in grades if g.is_completed and g.gpa_points]
     total_gpa = sum(g.gpa_points * g.credits_earned for g in completed_courses)
     total_credits = sum(g.credits_earned for g in completed_courses)
     gpa = round(total_gpa / total_credits, 2) if total_credits > 0 else 0
-    
+
     return jsonify({
         'grades': [{
             'id': g.id,
             'module_id': g.module_id,
             'module_code': g.module.module_code,
-            'module_name': g.module.name,
+            'module_name': g.module.name if g.module else 'Unknown',
             'assignment_score': g.assignment_score,
             'quiz_score': g.quiz_score,
             'exam_score': g.exam_score,
@@ -2214,9 +2394,9 @@ def get_module_grades(module_id):
     user = get_current_user()
     if not user or user.role not in ['admin', 'instructor']:
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     grades = Grade.query.filter_by(module_id=module_id).all()
-    
+
     return jsonify({
         'grades': [{
             'id': g.id,
@@ -2235,14 +2415,14 @@ def update_grade():
     user = get_current_user()
     if not user or user.role not in ['admin', 'instructor']:
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     data = request.get_json()
-    
+
     grade = Grade.query.filter_by(
         student_id=data['student_id'],
         module_id=data['module_id']
     ).first()
-    
+
     if not grade:
         grade = Grade(
             student_id=data['student_id'],
@@ -2260,10 +2440,10 @@ def update_grade():
         grade.exam_score = data.get('exam_score', grade.exam_score)
         grade.credits_earned = data.get('credits_earned', grade.credits_earned)
         grade.semester_id = data.get('semester_id', grade.semester_id)
-    
+
     # Calculate total score and grade letter
     grade.total_score = (grade.assignment_score or 0) + (grade.quiz_score or 0) + (grade.exam_score or 0)
-    
+
     # Grade letter calculation
     if grade.total_score >= 90:
         grade.grade_letter = 'A'
@@ -2280,9 +2460,9 @@ def update_grade():
     else:
         grade.grade_letter = 'F'
         grade.gpa_points = 0.0
-    
+
     db.session.commit()
-    
+
     # Notify student
     notification = Notification(
         user_id=data['student_id'],
@@ -2293,7 +2473,7 @@ def update_grade():
     )
     db.session.add(notification)
     db.session.commit()
-    
+
     return jsonify({
         'message': 'Grade updated successfully',
         'grade': {
@@ -2309,17 +2489,17 @@ def get_transcript():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     grades = Grade.query.filter_by(
         student_id=user.id,
         is_completed=True
     ).all()
-    
+
     # Calculate cumulative GPA
     total_gpa = sum(g.gpa_points * g.credits_earned for g in grades)
     total_credits = sum(g.credits_earned for g in grades)
     cumulative_gpa = round(total_gpa / total_credits, 2) if total_credits > 0 else 0
-    
+
     transcript = {
         'student': {
             'name': user.name,
@@ -2333,7 +2513,7 @@ def get_transcript():
         },
         'courses': [{
             'module_code': g.module.module_code,
-            'module_name': g.module.name,
+            'module_name': g.module.name if g.module else 'Unknown',
             'credits': g.credits_earned,
             'score': g.total_score,
             'grade': g.grade_letter,
@@ -2341,7 +2521,7 @@ def get_transcript():
             'semester': g.semester.name if g.semester else 'N/A'
         } for g in grades]
     }
-    
+
     return jsonify(transcript), 200
 
 # ==================== GAMIFICATION API ====================
@@ -2350,7 +2530,7 @@ def get_transcript():
 def get_badges():
     """List all available badges"""
     badges = Badge.query.filter_by(is_active=True).all()
-    
+
     return jsonify({
         'badges': [{
             'id': b.id,
@@ -2373,16 +2553,16 @@ def get_my_badges():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     user_badges = UserBadge.query.filter_by(user_id=user.id).all()
-    
+
     # Calculate progress for each badge
     badges = Badge.query.filter_by(is_active=True).all()
     badge_progress = []
-    
+
     for badge in badges:
         user_badge = next((ub for ub in user_badges if ub.badge_id == badge.id), None)
-        
+
         if user_badge:
             badge_progress.append({
                 'badge': {
@@ -2408,7 +2588,7 @@ def get_my_badges():
                 progress = perfect_quizzes
             elif badge.requirement_type == 'forum_posts':
                 progress = ForumPost.query.filter_by(author_id=user.id).count()
-            
+
             badge_progress.append({
                 'badge': {
                     'id': badge.id,
@@ -2421,7 +2601,7 @@ def get_my_badges():
                 'required': badge.requirement_value,
                 'is_completed': False
             })
-    
+
     return jsonify({'badges': badge_progress}), 200
 
 @app.route('/api/gamification/points', methods=['GET'])
@@ -2430,15 +2610,15 @@ def get_points():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     transactions = PointTransaction.query.filter_by(
         user_id=user.id
     ).order_by(PointTransaction.created_at.desc()).limit(50).all()
-    
+
     total_earned = sum(t.points for t in transactions if t.points > 0)
     total_spent = abs(sum(t.points for t in transactions if t.points < 0))
     balance = total_earned - total_spent
-    
+
     return jsonify({
         'balance': balance,
         'total_earned': total_earned,
@@ -2458,9 +2638,9 @@ def get_streaks():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     streaks = Streak.query.filter_by(user_id=user.id).all()
-    
+
     return jsonify({
         'streaks': [{
             'id': s.id,
@@ -2476,11 +2656,11 @@ def get_leaderboard():
     """Get leaderboard"""
     leaderboard_type = request.args.get('type', 'overall')
     limit = int(request.args.get('limit', 10))
-    
+
     entries = Leaderboard.query.filter_by(
         leaderboard_type=leaderboard_type
     ).order_by(Leaderboard.score.desc()).limit(limit).all()
-    
+
     return jsonify({
         'leaderboard': [{
             'rank': i + 1,
@@ -2496,9 +2676,9 @@ def award_points():
     user = get_current_user()
     if not user or user.role not in ['admin', 'instructor']:
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     data = request.get_json()
-    
+
     transaction = PointTransaction(
         user_id=data['user_id'],
         points=data['points'],
@@ -2508,7 +2688,7 @@ def award_points():
     )
     db.session.add(transaction)
     db.session.commit()
-    
+
     return jsonify({'message': 'Points awarded successfully'}), 200
 
 # ==================== ANALYTICS API ====================
@@ -2519,32 +2699,32 @@ def get_analytics_dashboard():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     # Quiz performance
     quiz_submissions = QuizSubmission.query.filter_by(student_id=user.id).all()
     avg_quiz_score = sum(s.percentage or 0 for s in quiz_submissions) / len(quiz_submissions) if quiz_submissions else 0
     quizzes_passed = len([s for s in quiz_submissions if s.passed])
-    
+
     # Study time
     study_sessions = StudySession.query.filter_by(user_id=user.id).all()
     total_study_time = sum(s.duration_seconds or 0 for s in study_sessions)
-    
+
     # Assignments
     submissions = Submission.query.filter_by(student_id=user.id).all()
     assignments_submitted = len(submissions)
     assignments_graded = len([s for s in submissions if s.status == 'graded'])
-    
+
     # Forum participation
     posts = ForumPost.query.filter_by(author_id=user.id).count()
     comments = ForumComment.query.filter_by(author_id=user.id).count()
-    
+
     # Points
     points = PointTransaction.query.filter_by(user_id=user.id).all()
     total_points = sum(p.points for p in points)
-    
+
     # Badges
     badges_earned = UserBadge.query.filter_by(user_id=user.id).count()
-    
+
     return jsonify({
         'dashboard': {
             'quiz_performance': {
@@ -2577,7 +2757,7 @@ def track_event():
     """Track an analytics event"""
     user = get_current_user()
     data = request.get_json()
-    
+
     event = AnalyticsEvent(
         user_id=user.id if user else None,
         event_type=data.get('event_type'),
@@ -2588,7 +2768,7 @@ def track_event():
     )
     db.session.add(event)
     db.session.commit()
-    
+
     return jsonify({'message': 'Event tracked'}), 200
 
 @app.route('/api/analytics/study-sessions', methods=['GET'])
@@ -2597,16 +2777,16 @@ def get_study_sessions():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     sessions = StudySession.query.filter_by(
         user_id=user.id
     ).order_by(StudySession.start_time.desc()).limit(50).all()
-    
+
     return jsonify({
         'sessions': [{
             'id': s.id,
             'module_id': s.module_id,
-            'module_name': s.module.name if s.module else None,
+            'module_name': s.module.name if s.module else 'Unknown',
             'start_time': s.start_time.isoformat(),
             'end_time': s.end_time.isoformat() if s.end_time else None,
             'duration_seconds': s.duration_seconds,
@@ -2622,9 +2802,9 @@ def start_study_session():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     data = request.get_json()
-    
+
     session = StudySession(
         user_id=user.id,
         module_id=data.get('module_id'),
@@ -2632,7 +2812,7 @@ def start_study_session():
     )
     db.session.add(session)
     db.session.commit()
-    
+
     return jsonify({
         'message': 'Study session started',
         'session_id': session.id
@@ -2644,28 +2824,28 @@ def end_study_session(session_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     session = StudySession.query.filter_by(
         id=session_id,
         user_id=user.id
     ).first_or_404()
-    
+
     session.end_time = datetime.utcnow()
     session.duration_seconds = int((session.end_time - session.start_time).total_seconds())
-    
+
     data = request.get_json()
     if data:
         session.pages_viewed = data.get('pages_viewed', 0)
         session.resources_accessed = data.get('resources_accessed', 0)
-    
+
     db.session.commit()
-    
+
     # Update streak
     streak = Streak.query.filter_by(
         user_id=user.id,
         streak_type='study'
     ).first()
-    
+
     if not streak:
         streak = Streak(
             user_id=user.id,
@@ -2686,9 +2866,9 @@ def end_study_session(session_id):
         else:
             streak.current_streak = 1
             streak.last_activity_date = today
-    
+
     db.session.commit()
-    
+
     return jsonify({
         'message': 'Study session ended',
         'duration': session.duration_seconds
@@ -2700,18 +2880,18 @@ def get_module_performance(module_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     # Quiz scores for this module
     module = Module.query.get_or_404(module_id)
     quizzes = Quiz.query.filter_by(module_id=module_id).all()
-    
+
     quiz_scores = []
     for quiz in quizzes:
         submission = QuizSubmission.query.filter_by(
             quiz_id=quiz.id,
             student_id=user.id
         ).order_by(QuizSubmission.submitted_at.desc()).first()
-        
+
         if submission:
             quiz_scores.append({
                 'quiz_id': quiz.id,
@@ -2720,17 +2900,17 @@ def get_module_performance(module_id):
                 'passed': submission.passed,
                 'submitted_at': submission.submitted_at.isoformat()
             })
-    
+
     # Assignments for this module
     assignments = Assignment.query.filter_by(module_id=module_id).all()
     assignment_scores = []
-    
+
     for assignment in assignments:
         submission = Submission.query.filter_by(
             assignment_id=assignment.id,
             student_id=user.id
         ).first()
-        
+
         if submission:
             assignment_scores.append({
                 'assignment_id': assignment.id,
@@ -2739,7 +2919,7 @@ def get_module_performance(module_id):
                 'max_score': assignment.max_score,
                 'graded': submission.status == 'graded'
             })
-    
+
     return jsonify({
         'module': {
             'id': module.id,
@@ -2758,26 +2938,26 @@ def get_admin_analytics():
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     # User stats
     total_users = User.query.count()
     active_users = User.query.filter_by(is_active=True).count()
-    
+
     # Module stats
     total_modules = Module.query.count()
-    
+
     # Quiz stats
     total_quizzes = Quiz.query.count()
     total_submissions = QuizSubmission.query.count()
-    
+
     # Forum stats
     total_posts = ForumPost.query.count()
     total_comments = ForumComment.query.count()
-    
+
     # Engagement
     study_sessions = StudySession.query.all()
     total_study_hours = sum(s.duration_seconds or 0 for s in study_sessions) / 3600
-    
+
     return jsonify({
         'overview': {
             'users': {
@@ -2806,21 +2986,21 @@ def get_enrolled_modules():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     enrolled = []
     for m in user.modules:
         enrolled.append({
             'id': m.id,
             'module_code': m.module_code,
             'name': m.name,
-            'school_name': m.school.name,
-            'college_name': m.school.college.name,
+            'school_name': m.school.name if m.school else 'Unknown',
+            'college_name': m.school.college.name if m.school and m.school.college else 'Unknown',
             'semester': m.semester.name,
             'academic_year': m.semester.academic_year.name,
             'document_count': m.documents.count(),
             'student_count': len(m.students)
         })
-    
+
     return jsonify({'modules': enrolled}), 200
 
 @app.route('/api/available', methods=['GET'])
@@ -2828,24 +3008,24 @@ def get_available_modules():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     # Get modules where enrollment is open
     open_modules = Module.query.filter_by(
         is_active=True,
         is_enrollment_open=True
     ).all()
-    
+
     enrolled_ids = [m.id for m in user.modules]
     available = [m for m in open_modules if m.id not in enrolled_ids]
-    
+
     return jsonify({
         'modules': [{
             'id': m.id,
             'module_code': m.module_code,
             'name': m.name,
             'description': m.description,
-            'school_name': m.school.name,
-            'college_name': m.school.college.name,
+            'school_name': m.school.name if m.school else 'Unknown',
+            'college_name': m.school.college.name if m.school and m.school.college else 'Unknown',
             'credits': m.credits,
             'lecturer_name': m.lecturer_name,
             'tags': [t.strip() for t in m.tags.split(',')] if m.tags else [],
@@ -2858,21 +3038,21 @@ def enroll_in_module(module_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     module = Module.query.get_or_404(module_id)
-    
+
     if user in module.students:
         return jsonify({'error': 'Already enrolled'}), 400
-    
+
     if not module.is_enrollment_open:
         return jsonify({'error': 'Enrollment not open'}), 400
-    
+
     if len(module.students) >= module.max_students:
         return jsonify({'error': 'Module is full'}), 400
-    
+
     module.students.append(user)
     db.session.commit()
-    
+
     return jsonify({'message': 'Enrolled successfully'}), 200
 
 @app.route('/api/browse/colleges', methods=['GET'])
@@ -2880,7 +3060,7 @@ def browse_colleges():
     """Full hierarchy browse"""
     colleges = College.query.filter_by(is_active=True).all()
     result = []
-    
+
     for college in colleges:
         college_data = {
             'id': college.id,
@@ -2888,7 +3068,7 @@ def browse_colleges():
             'name': college.name,
             'schools': []
         }
-        
+
         for school in college.schools.filter_by(is_active=True).all():
             school_data = {
                 'id': school.id,
@@ -2896,19 +3076,19 @@ def browse_colleges():
                 'name': school.name,
                 'modules_by_year': {}
             }
-            
+
             for module in school.modules.filter_by(is_active=True).all():
                 year_name = module.semester.academic_year.name
                 semester_name = module.semester.name
                 key = f"{year_name} - {semester_name}"
-                
+
                 if key not in school_data['modules_by_year']:
                     school_data['modules_by_year'][key] = {
                         'academic_year': year_name,
                         'semester': semester_name,
                         'modules': []
                     }
-                
+
                 school_data['modules_by_year'][key]['modules'].append({
                     'id': module.id,
                     'module_code': module.module_code,
@@ -2916,13 +3096,450 @@ def browse_colleges():
                     'credits': module.credits,
                     'student_count': len(module.students)
                 })
-            
+
             school_data['modules_by_year'] = list(school_data['modules_by_year'].values())
             college_data['schools'].append(school_data)
-        
+
         result.append(college_data)
-    
+
     return jsonify({'structure': result}), 200
+
+# ==================== SOCIAL NETWORK API ====================
+
+@app.route('/api/social/posts', methods=['GET'])
+def get_social_posts():
+    """Get all social posts (feed)"""
+    posts = SocialPost.query.order_by(SocialPost.created_at.desc()).limit(50).all()
+    return jsonify({
+        'posts': [p.to_dict() for p in posts],
+        'total': len(posts)
+    })
+
+@app.route('/api/social/posts', methods=['POST'])
+def create_social_post():
+    """Create a new social post with @mention support"""
+    data = request.get_json()
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(user_data.get('user_id'))
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        post = SocialPost(
+            user_id=user.id,
+            content=data.get('content', ''),
+            post_type=data.get('post_type', 'general'),
+            resource_url=data.get('resource_url', None)
+        )
+        db.session.add(post)
+        db.session.commit()
+
+        # Process @mentions
+        process_mentions(data.get('content', ''), post.id, user.id, user.id)
+
+        # Create activity feed entry for followers
+        following_users = SocialFollow.query.filter_by(followed_id=user.id).all()
+        for follow in following_users:
+            activity = ActivityFeed(
+                user_id=follow.follower_id,
+                activity_type='post',
+                source_user_id=user.id,
+                entity_type='post',
+                entity_id=post.id,
+                content=f"{user.name} created a new post",
+                link=f"/public#post-{post.id}"
+            )
+            db.session.add(activity)
+        db.session.commit()
+
+        # Award points for social engagement
+        db.session.add(PointTransaction(user_id=user.id, points=10, transaction_type='social_post', description='Created a new post'))
+        db.session.commit()
+
+        return jsonify({'post': post.to_dict(), 'message': 'Post created successfully'}), 201
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/posts/<int:post_id>', methods=['DELETE'])
+def delete_social_post(post_id):
+    """Deletes a social post"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(user_data.get('user_id'))
+        post = SocialPost.query.get(post_id)
+
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+
+        # Only post author or admin can delete
+        if post.user_id != user.id and user.role != 'admin':
+            return jsonify({'error': 'Permission denied'}), 403
+
+        # Delete associated likes and comments first
+        SocialLike.query.filter_by(post_id=post.id).delete()
+        SocialComment.query.filter_by(post_id=post.id).delete()
+
+        db.session.delete(post)
+        db.session.commit()
+
+        return jsonify({'message': 'Post deleted successfully'})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/posts/<int:post_id>/like', methods=['POST'])
+def toggle_like(post_id):
+    """Toggle like on a post"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(user_data.get('user_id'))
+        post = SocialPost.query.get(post_id)
+
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+
+        existing_like = SocialLike.query.filter_by(post_id=post.id, user_id=user.id).first()
+
+        if existing_like:
+            db.session.delete(existing_like)
+            post.likes_count = max(0, post.likes_count - 1)
+            liked = False
+        else:
+            new_like = SocialLike(post_id=post.id, user_id=user.id)
+            db.session.add(new_like)
+            post.likes_count = post.likes_count + 1
+            liked = True
+
+            # Award points to post author
+            db.session.add(PointTransaction(user_id=post.user_id, points=2, transaction_type='like_received', description='Post received a like'))
+
+        db.session.commit()
+
+        return jsonify({'liked': liked, 'likes_count': post.likes_count})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/posts/<int:post_id>/comments', methods=['GET'])
+def get_comments(post_id):
+    """Get comments for a post"""
+    comments = SocialComment.query.filter_by(post_id=post_id, parent_id=None).order_by(SocialComment.created_at.asc()).all()
+    return jsonify({'comments': [c.to_dict() for c in comments]})
+
+@app.route('/api/social/posts/<int:post_id>/comments', methods=['POST'])
+def create_social_comment(post_id):
+    """Create a comment on a post with @mention support"""
+    data = request.get_json()
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(user_data.get('user_id'))
+        post = SocialPost.query.get(post_id)
+
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+
+        comment = SocialComment(
+            post_id=post.id,
+            user_id=user.id,
+            content=data.get('content', ''),
+            parent_id=data.get('parent_id', None)
+        )
+        db.session.add(comment)
+        post.comments_count = post.comments_count + 1
+        db.session.commit()
+
+        # Process @mentions
+        process_mentions(data.get('content', ''), post.id, user.id, user.id)
+
+        # Create activity for post author (if not self)
+        if post.author_id != user.id:
+            activity = ActivityFeed(
+                user_id=post.author_id,
+                activity_type='comment',
+                source_user_id=user.id,
+                entity_type='comment',
+                entity_id=comment.id,
+                content=f"{user.name} commented on your post",
+                link=f"/public#comment-{comment.id}"
+            )
+            db.session.add(activity)
+
+        db.session.commit()
+
+        # Award points for commenting
+        db.session.add(PointTransaction(user_id=user.id, points=5, transaction_type='comment', description='Commented on a post'))
+        db.session.commit()
+
+        return jsonify({'comment': comment.to_dict()}), 201
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/comments/<int:comment_id>', methods=['DELETE'])
+def delete_comment(comment_id):
+    """Delete a comment"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(user_data.get('user_id'))
+        comment = SocialComment.query.get(comment_id)
+
+        if not comment:
+            return jsonify({'error': 'Comment not found'}), 404
+
+        if comment.user_id != user.id and user.role != 'admin':
+            return jsonify({'error': 'Permission denied'}), 403
+
+        # Delete replies first
+        SocialComment.query.filter_by(parent_id=comment.id).delete()
+
+        # Update post comment count
+        post = SocialPost.query.get(comment.post_id)
+        if post:
+            post.comments_count = max(0, post.comments_count - 1)
+
+        db.session.delete(comment)
+        db.session.commit()
+
+        return jsonify({'message': 'Comment deleted successfully'})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/users', methods=['GET'])
+def get_social_users():
+    """Get users for social network (suggestions)"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        # Get users not already followed
+        followed_ids = [f.followed_id for f in SocialFollow.query.filter_by(follower_id=current_user.id).all()]
+        followed_ids.append(current_user.id)
+
+        users = User.query.filter(~User.id.in_(followed_ids)).limit(20).all()
+
+        return jsonify({'users': [u.to_social_dict() for u in users]})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/users/<int:user_id>', methods=['GET'])
+def get_social_user_profile(user_id):
+    """Get user profile for social network"""
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    posts_count = SocialPost.query.filter_by(user_id=user.id).count()
+    followers_count = SocialFollow.query.filter_by(followed_id=user.id).count()
+    following_count = SocialFollow.query.filter_by(follower_id=user.id).count()
+
+    return jsonify({
+        'user': user.to_social_dict(),
+        'stats': {
+            'posts': posts_count,
+            'followers': followers_count,
+            'following': following_count
+        }
+    })
+
+@app.route('/api/social/follow/<int:user_id>', methods=['POST'])
+def follow_user(user_id):
+    """Follow/unfollow a user"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+        target_user = User.query.get(user_id)
+
+        if not target_user:
+            return jsonify({'error': 'User not found'}), 404
+
+        if target_user.id == current_user.id:
+            return jsonify({'error': 'Cannot follow yourself'}), 400
+
+        existing = SocialFollow.query.filter_by(follower_id=current_user.id, followed_id=user_id).first()
+
+        if existing:
+            db.session.delete(existing)
+            db.session.commit()
+            follow = SocialFollow(follower_id=current_user.id, followed_id=user_id)
+            db.session.add(follow)
+            db.session.commit()
+
+            # Award points for social connection
+            db.session.add(PointTransaction(user_id=current_user.id, points=5, transaction_type='follow', description=f'Followed {target_user.name}'))
+            db.session.commit()
+
+            return jsonify({'following': True, 'message': 'Followed successfully'})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/following', methods=['GET'])
+def get_following():
+    """Get users that current user follows"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        follows = SocialFollow.query.filter_by(follower_id=current_user.id).all()
+        users = [User.query.get(f.followed_id) for f in follows]
+
+        return jsonify({'following': [u.to_social_dict() for u in users if u]})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/friends', methods=['GET'])
+def get_friends():
+    """Get user's friends (mutual follows)"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        # Find mutual follows
+        following = set([f.followed_id for f in SocialFollow.query.filter_by(follower_id=current_user.id).all()])
+        followers = set([f.follower_id for f in SocialFollow.query.filter_by(followed_id=current_user.id).all()])
+        friend_ids = following & followers
+
+        friends = [User.query.get(uid) for uid in friend_ids]
+
+        return jsonify({'friends': [f.to_social_dict() for f in friends]})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/friend-requests', methods=['GET'])
+def get_friend_requests():
+    """Get pending friend requests"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        requests = FriendRequest.query.filter_by(to_user_id=current_user.id, status='pending').all()
+
+        return jsonify({'requests': [r.to_dict() for r in requests]})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/friend-requests', methods=['POST'])
+def send_friend_request():
+    """Send a friend request"""
+    data = request.get_json()
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+        to_user_id = data.get('to_user_id')
+
+        if not to_user_id:
+            return jsonify({'error': 'User ID required'}), 400
+
+        # Check if already friends or request pending
+        existing = FriendRequest.query.filter(
+            ((FriendRequest.from_user_id == current_user.id) & (FriendRequest.to_user_id == to_user_id)) |
+            ((FriendRequest.from_user_id == to_user_id) & (FriendRequest.to_user_id == current_user.id))
+        ).filter(FriendRequest.status == 'pending').first()
+
+        if existing:
+            return jsonify({'error': 'Friend request already pending'}), 400
+
+        # Check if already following (quick friends)
+        is_following = SocialFollow.query.filter_by(follower_id=current_user.id, followed_id=to_user_id).first()
+
+        fr = FriendRequest(from_user_id=current_user.id, to_user_id=to_user_id, is_quick_friend=bool(is_following))
+        db.session.add(fr)
+        db.session.commit()
+
+        return jsonify({'message': 'Friend request sent', 'request': fr.to_dict()}), 201
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+@app.route('/api/social/friend-requests/<int:request_id>/respond', methods=['POST'])
+def respond_friend_request(request_id):
+    """Accept or reject friend request"""
+    data = request.get_json()
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        fr = FriendRequest.query.get(request_id)
+        if not fr or fr.to_user_id != current_user.id:
+            return jsonify({'error': 'Request not found'}), 404
+
+        action = data.get('action', 'reject')
+        fr.status = 'accepted' if action == 'accept' else 'rejected'
+        db.session.commit()
+
+        if fr.status == 'accepted':
+            # Create mutual follow
+            follow1 = SocialFollow(follower_id=current_user.id, followed_id=fr.from_user_id)
+            follow2 = SocialFollow(follower_id=fr.from_user_id, followed_id=current_user.id)
+            db.session.add(follow1)
+            db.session.add(follow2)
+            db.session.commit()
+
+            # Award points for making a friend!
+            db.session.add(PointTransaction(user_id=current_user.id, points=25, transaction_type='new_friend', description='Made a new study buddy!'))
+            db.session.add(PointTransaction(user_id=fr.from_user_id, points=25, transaction_type='new_friend', description='Made a new study buddy!'))
+            db.session.commit()
+
+            return jsonify({'message': 'Friend request accepted! You are now study buddies!', 'status': 'accepted'})
+
+        return jsonify({'message': 'Friend request rejected', 'status': 'rejected'})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
 
 # ==================== ADMIN API ROUTES ====================
 
@@ -2932,14 +3549,14 @@ def create_academic_year():
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
-    
+
     data = request.get_json()
-    
+
     # Check if year code already exists
     existing = AcademicYear.query.filter_by(year_code=data.get('year_code')).first()
     if existing:
         return jsonify({'error': 'Academic year already exists'}), 400
-    
+
     year = AcademicYear(
         year_code=data.get('year_code'),
         name=data.get('name'),
@@ -2948,7 +3565,7 @@ def create_academic_year():
     )
     db.session.add(year)
     db.session.commit()
-    
+
     return jsonify({'message': 'Academic year created', 'id': year.id}), 201
 
 @app.route('/api/admin/academic-years/<int:year_id>/activate', methods=['POST'])
@@ -2957,16 +3574,16 @@ def activate_academic_year(year_id):
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
-    
+
     year = AcademicYear.query.get_or_404(year_id)
-    
+
     # Deactivate all other years
     AcademicYear.query.update({'is_active': False})
     year.is_active = True
     year.is_completed = False
-    
+
     db.session.commit()
-    
+
     return jsonify({'message': 'Academic year activated'}), 200
 
 @app.route('/api/admin/academic-years/<int:year_id>/complete', methods=['POST'])
@@ -2975,13 +3592,13 @@ def complete_academic_year(year_id):
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
-    
+
     year = AcademicYear.query.get_or_404(year_id)
     year.is_completed = True
     year.is_active = False
-    
+
     db.session.commit()
-    
+
     return jsonify({'message': 'Academic year completed'}), 200
 
 @app.route('/api/admin/semesters', methods=['POST'])
@@ -2990,9 +3607,9 @@ def create_semester():
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
-    
+
     data = request.get_json()
-    
+
     semester = Semester(
         academic_year_id=data.get('academic_year_id'),
         name=data.get('name'),
@@ -3002,41 +3619,140 @@ def create_semester():
     )
     db.session.add(semester)
     db.session.commit()
-    
+
     return jsonify({'message': 'Semester created', 'id': semester.id}), 201
 
 @app.route('/api/admin/modules', methods=['POST'])
 def create_module():
-    """Create a new module"""
+    """Create a new module with optional file upload"""
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
+
+    # Check content type to handle both JSON and FormData
+    content_type = request.content_type or ''
     
-    data = request.get_json()
+    if 'multipart/form-data' in content_type:
+        # Handle FormData (file upload from admin-upload.html)
+        data = request.form
+        file = request.files.get('file')
+    else:
+        # Handle JSON
+        data = request.get_json()
+        file = None
     
+    # Get values - handle both data sources (dict vs MultiDict)
+    course_code = data.get('course_code') or data.get('module_code')
+    course_name = data.get('course_name') or data.get('name')
+    description = data.get('description')
+    lecturer_name = data.get('lecturer_name')
+    module_type = data.get('module_type', 'Lecture Notes')
+    college_id = data.get('college_id')
+    school_id = data.get('school_id')
+    academic_year_id = data.get('academic_year_id')
+    year_of_study = data.get('year_of_study')
+    semester_id = data.get('semester_id')
+    external_link = data.get('external_link')
+    program_name = data.get('program_name')
+
+    # Validate required fields
+    if not course_code or not course_name:
+        return jsonify({'error': 'Course code and name are required'}), 400
+
     # Check if module code exists
-    existing = Module.query.filter_by(module_code=data.get('module_code')).first()
+    existing = Module.query.filter_by(module_code=course_code).first()
     if existing:
         return jsonify({'error': 'Module code already exists'}), 400
-    
+
+    # Parse IDs to integers
+    try:
+        if school_id:
+            school_id = int(school_id)
+        if semester_id:
+            semester_id = int(semester_id)
+        if year_of_study:
+            year_of_study = int(year_of_study)
+    except (ValueError, TypeError):
+        pass  # Use defaults if conversion fails
+
+    # Create the module
     module = Module(
-        module_code=data.get('module_code'),
-        name=data.get('name'),
-        description=data.get('description'),
-        school_id=data.get('school_id'),
-        semester_id=data.get('semester_id'),
-        credits=data.get('credits', 0),
-        lecturer_name=data.get('lecturer_name'),
-        lecturer_email=data.get('lecturer_email'),
-        tags=','.join(data.get('tags', [])),
-        module_type=data.get('module_type', 'core'),
-        max_students=data.get('max_students', 100),
-        is_enrollment_open=data.get('is_enrollment_open', False)
+        module_code=course_code,
+        name=course_name,
+        description=description,
+        school_id=school_id,
+        semester_id=semester_id,
+        credits=0,
+        lecturer_name=lecturer_name,
+        lecturer_email=None,
+        tags='',
+        module_type=module_type,
+        max_students=100,
+        is_enrollment_open=False,
+        program=program_name,
+        year_of_study=year_of_study,
+        external_link=external_link
     )
-    db.session.add(module)
-    db.session.commit()
     
-    return jsonify({'message': 'Module created', 'id': module.id}), 201
+    try:
+        db.session.add(module)
+        db.session.flush()  # Get module ID before committing
+
+        # Handle file upload if present
+        if file and file.filename:
+            # Generate secure filename
+            original_filename = secure_filename(file.filename)
+            ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
+            unique_filename = f"{course_code}_{uuid.uuid4().hex[:8]}.{ext}"
+            
+            # Create uploads directory if it doesn't exist
+            upload_folder = os.path.join(os.getcwd(), 'uploads')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            file_path = os.path.join(upload_folder, unique_filename)
+            
+            # Save file
+            file.save(file_path)
+            
+            # Get file size
+            file_size = os.path.getsize(file_path)
+            
+            # Determine file type
+            def get_file_type(filename):
+                ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                ext_map = {
+                    'pdf': 'pdf', 'doc': 'doc', 'docx': 'docx',
+                    'xls': 'xls', 'xlsx': 'xlsx',
+                    'ppt': 'ppt', 'pptx': 'pptx',
+                    'txt': 'txt',
+                    'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image',
+                    'zip': 'archive', 'rar': 'archive'
+                }
+                return ext_map.get(ext, 'other')
+            
+            # Create document record
+            document = Document(
+                title=original_filename,
+                description=description or '',
+                filename=unique_filename,
+                file_type=get_file_type(original_filename),
+                file_size=file_size,
+                file_path=file_path,
+                module_id=module.id,
+                category=module_type,
+                uploaded_by=user.id
+            )
+            db.session.add(document)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Module created successfully', 'id': module.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        tb = traceback.format_exc()
+        app.logger.error('Error creating module: %s', tb)
+        return jsonify({'error': 'Server error while creating module', 'details': str(e)}), 500
 
 @app.route('/api/admin/users', methods=['GET'])
 def get_all_users():
@@ -3044,9 +3760,9 @@ def get_all_users():
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
-    
+
     users = User.query.order_by(User.created_at.desc()).all()
-    
+
     return jsonify({
         'users': [{
             'id': u.id,
@@ -3065,13 +3781,13 @@ def update_user_role(user_id):
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
-    
+
     target_user = User.query.get_or_404(user_id)
     data = request.get_json()
-    
+
     target_user.role = data.get('role', target_user.role)
     db.session.commit()
-    
+
     return jsonify({'message': 'User role updated'}), 200
 
 @app.route('/api/admin/stats', methods=['GET'])
@@ -3080,7 +3796,7 @@ def get_admin_stats():
     user = get_current_user()
     if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
-    
+
     return jsonify({
         'total_users': User.query.count(),
         'total_colleges': College.query.count(),
@@ -3093,6 +3809,26 @@ def get_admin_stats():
 
 @app.route('/')
 def index():
+    """Main index page - redirects students to dashboard or onboarding"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        token = request.cookies.get('ur_token') or request.args.get('token', '')
+
+    if token:
+        try:
+            data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+            user = User.query.get(data.get('user_id'))
+            if user:
+                # Check if user has completed onboarding
+                if hasattr(user, 'onboarding_complete') and not user.onboarding_complete:
+                    return                     # Redirect students to their dashboard
+                    return send_from_directory('static', 'student-dashboard.html')
+        except jwt.ExpiredSignatureError:
+            pass
+        except jwt.InvalidTokenError:
+            pass
+
+    # No valid token - show public page
     return send_from_directory('static', 'index.html')
 
 @app.route('/public')
@@ -3106,7 +3842,7 @@ def dashboard_page():
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     if not token:
         token = request.cookies.get('ur_admin_token') or request.args.get('token', '')
-    
+
     if token:
         try:
             data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
@@ -3117,7 +3853,7 @@ def dashboard_page():
             pass
         except jwt.InvalidTokenError:
             pass
-    
+
     # Not authenticated as admin, redirect to home
     return send_from_directory('static', 'index.html')
 
@@ -3127,20 +3863,37 @@ def admin_page():
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     if not token:
         token = request.cookies.get('ur_admin_token') or request.args.get('token', '')
-    
+
     if token:
         try:
             data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
             user = User.query.get(data.get('user_id'))
             if user and user.role == 'admin':
-                return send_from_directory('static', 'admin.html')
+                # Read HTML file and inject token
+                html_path = os.path.join(os.path.dirname(__file__), 'static', 'admin-dashboard.html')
+                with open(html_path, 'r', encoding='utf-8') as f:
+                    html_content = f.read()
+                # Inject token into localStorage initialization
+                html_content = html_content.replace(
+                    "let authToken = localStorage.getItem('ur_admin_token');",
+                    f"let authToken = '{token}';"
+                )
+                # Clear the token from URL by redirecting to clean URL
+                response = app.make_response(html_content)
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                return response
         except jwt.ExpiredSignatureError:
             pass
         except jwt.InvalidTokenError:
             pass
-    
+
     # Not authenticated as admin, redirect to home
     return send_from_directory('static', 'index.html')
+
+@app.route('/admin/upload')
+def admin_upload_page():
+    """Admin upload module page"""
+    return send_from_directory('static', 'admin-upload.html')
 
 @app.route('/admin-login')
 def admin_login_page():
@@ -3148,16 +3901,16 @@ def admin_login_page():
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     if not token:
         token = request.cookies.get('ur_admin_token') or request.args.get('token', '')
-    
+
     if token:
         try:
             data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
             user = User.query.get(data.get('user_id'))
             if user and user.role == 'admin':
                 return send_from_directory('static', 'admin.html')
-        except:
+        except Exception:
             pass
-    
+
     # Show admin login page
     return send_from_directory('static', 'admin-login.html')
 
@@ -3165,7 +3918,7 @@ def admin_login_page():
 def admin_access():
     """Admin access route - checks admin token and redirects to admin page"""
     token = request.cookies.get('ur_admin_token') or request.args.get('token', '')
-    
+
     if token:
         try:
             data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
@@ -3173,19 +3926,61 @@ def admin_access():
             if user and user.role == 'admin':
                 # Redirect to admin page with token
                 return redirect(f'/admin?token={token}')
-        except:
+        except Exception:
             pass
-    
+
     # Not authenticated as admin
     return send_from_directory('static', 'index.html')
 
+# ==================== STUDENT ROUTES ====================
+
+@app.route('/login')
+def login_page():
+    """Student login page"""
+    return send_from_directory('static', 'student-login.html')
+
+@app.route('/register')
+def register_page():
+    """Student registration page"""
+    return send_from_directory('static', 'student-register.html')
+
+@app.route('/onboarding')
+def onboarding_page():
+    """Student onboarding page"""
+    return send_from_directory('static', 'student-onboarding.html')
+
+@app.route('/my-dashboard')
+def my_dashboard_page():
+    """Student dashboard page"""
+    return send_from_directory('static', 'student-dashboard.html')
+
+@app.route('/my-courses')
+def my_courses_page():
+    """Student courses page"""
+    return send_from_directory('static', 'student-courses.html')
+
+@app.route('/my-profile')
+def my_profile_page():
+    """Student profile page"""
+    return send_from_directory('static', 'student-profile.html')
+
+@app.route('/knowledge-commons')
+def knowledge_commons_page():
+    """Knowledge Commons - Academic social knowledge platform"""
+    return send_from_directory('static', 'social-knowledge.html')
+
+@app.route('/document')
+def document_reader_page():
+    """Document reader page"""
+    return send_from_directory('static', 'document-reader.html')
+
 @app.route('/<path:path>')
 def serve_static(path):
-    if path.startswith('api/') or path.startswith('auth/'):
+    if path.startswith('api/') or path.startswith('_'):
         return jsonify({'error': 'API endpoint'}), 404
     try:
         return send_from_directory('static', path)
-    except:
+    except Exception:
         return send_from_directory('static', 'index.html')
 
 # ==================== INITIALIZE DATABASE ====================
@@ -3193,7 +3988,76 @@ def serve_static(path):
 def init_db():
     with app.app_context():
         db.create_all()
-        
+
+        # Migration for missing columns in User table
+        from sqlalchemy import text, inspect
+        inspector = inspect(db.engine)
+        if 'user' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('user')]
+
+            if 'reputation' not in columns:
+                print("Migrating: Adding reputation column to user table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN reputation INTEGER DEFAULT 0"))
+                    conn.commit()
+
+            if 'is_verified_lecturer' not in columns:
+                print("Migrating: Adding is_verified_lecturer column to user table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN is_verified_lecturer BOOLEAN DEFAULT 0"))
+                    conn.commit()
+
+        # Migration for School table
+        if 'school' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('school')]
+            if 'is_active' not in columns:
+                print("Migrating: Adding is_active column to school table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE school ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+                    conn.commit()
+
+        if 'college' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('college')]
+            if 'is_active' not in columns:
+                print("Migrating: Adding is_active column to college table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE college ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+                    conn.commit()
+
+        # Migration for Announcement table
+        if 'announcement' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('announcement')]
+            
+            if 'scope' not in columns:
+                print("Migrating: Adding scope column to announcement table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE announcement ADD COLUMN scope VARCHAR(50) DEFAULT 'university'"))
+                    conn.commit()
+            
+            if 'college_id' not in columns:
+                print("Migrating: Adding college_id column to announcement table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE announcement ADD COLUMN college_id INTEGER REFERENCES college(id)"))
+                    conn.commit()
+            
+            if 'program' not in columns:
+                print("Migrating: Adding program column to announcement table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE announcement ADD COLUMN program VARCHAR(100)"))
+                    conn.commit()
+                    
+            if 'year' not in columns:
+                print("Migrating: Adding year column to announcement table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE announcement ADD COLUMN year INTEGER"))
+                    conn.commit()
+
+            if 'created_by' not in columns:
+                print("Migrating: Adding created_by column to announcement table")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE announcement ADD COLUMN created_by INTEGER"))
+                    conn.commit()
+
         # Create colleges if empty
         if College.query.count() == 0:
             colleges = [
@@ -3209,29 +4073,113 @@ def init_db():
                 db.session.add(c)
             db.session.commit()
             print("✅ Created colleges")
-        
+
         # Create schools if empty
-        if School.query.count() == 0:
-            schools = [
-                School(college_id=1, code="SAH", name="School of Arts and Humanities"),
-                School(college_id=1, code="SSH", name="School of Social Sciences"),
-                School(college_id=2, code="SOB", name="School of Business"),
-                School(college_id=2, code="SOE", name="School of Economics"),
-                School(college_id=3, code="SAG", name="School of Agriculture"),
-                School(college_id=3, code="SFS", name="School of Food Sciences"),
-                School(college_id=4, code="STE", name="School of Teacher Education"),
-                School(college_id=5, code="SMED", name="School of Medicine"),
-                School(college_id=5, code="SNUR", name="School of Nursing"),
-                School(college_id=6, code="SICT", name="School of ICT"),
-                School(college_id=6, code="SEN", name="School of Engineering"),
-                School(college_id=6, code="SNS", name="School of Natural Sciences"),
-                School(college_id=7, code="SVS", name="School of Veterinary Sciences"),
-            ]
-            for s in schools:
-                db.session.add(s)
-            db.session.commit()
-            print("✅ Created schools")
-        
+        schools_data = [
+                # CST (ID 6)
+                (6, "BH8COE", "BSC (HONS) IN COMPUTER ENGINEERING"),
+                (6, "BH8CSC", "BSC (HONS) IN COMPUTER SCIENCE"),
+                (6, "BH8ISY", "BSC (HONS) IN INFORMATION SYSTEMS"),
+                (6, "BH8ITE", "BSC (HONS) IN INFORMATION TECHNOLOGY"),
+                (6, "BH8GEO", "BSC (HONS) IN APPLIED GEOLOGY"),
+                (6, "BH8MIN", "BSC (HONS) IN MINING ENGINEERING"),
+                (6, "BH8ANC", "BSc (HONS) IN ANALYTICAL CHEMISTRY"),
+                (6, "BH8APM", "BSc (HONS) IN APPLIED MATHEMATICS"),
+                (6, "BH8APH", "BSc (HONS) IN APPLIED PHYSICS"),
+                (6, "BH8BBC", "BSc (HONS) IN BIOCHEMISTRY"),
+                (6, "BH8BIO", "BSc (HONS) IN BIOTECHNOLOGY"),
+                (6, "BH8COB", "BSc (HONS) IN CONSERVATION BIOLOGY"),
+                (6, "BH8NST", "BSc (HONS) IN NUCLEAR SCIENCE AND TECH"),
+                (6, "BH8OCH", "BSc (HONS) IN ORGANIC CHEMISTRY"),
+                (6, "BH8STA", "BSc (HONS) IN STATISTICS"),
+
+                # CVAS (ID 7)
+                (7, "BH8VET", "BACHELOR OF VETERINARY MEDICINE"),
+                (7, "BH8ANP", "BSC (HONS) IN ANIMAL PRODUCTION"),
+                (7, "BH8AQF", "BSC HONS IN AQUACULTURE&FISHERIES MGT"),
+
+                # CMHS (ID 5)
+                (5, "CMHS01", "ADV. DIPLOMA IN MENTAL HEALTH NURSING"),
+                (5, "CMHS02", "ADVANCED DIPLOMA IN MIDWIFERY"),
+                (5, "CMHS03", "ADVANCED DIPLOMA IN NURSING"),
+                (5, "CMHS04", "BACHELOR OF DENTAL THERAPY"),
+                (5, "CMHS05", "BACHELOR OF PHARMACY"),
+                (5, "CMHS06", "BACHELOR OF SCIENCE IN ANAESTHESIA"),
+                (5, "CMHS07", "BACHELOR OF SCIENCE IN PHYSIOTHERAPY"),
+                (5, "CMHS08", "BSC (HONS) IN BIOMEDICAL LAB. SCIENCES"),
+                (5, "CMHS09", "BSC (HONS) IN CLINICAL MED. & COM HEALTH"),
+                (5, "CMHS10", "BSC (HONS) IN CLINICAL PSYCHOLOGY"),
+                (5, "CMHS11", "BSC (HONS) IN ENVIRON. HEALTH SCIENCES"),
+                (5, "CMHS12", "BSC (HONS) IN HUMAN NUTRITION& DIETETICS"),
+                (5, "CMHS13", "BSC (HONS) IN MEDICAL IMAGING SCIENCES"),
+                (5, "CMHS14", "BSC (HONS) IN MENTAL HEALTH NURSING"),
+                (5, "CMHS15", "BSC (HONS) IN MIDWIFERY"),
+                (5, "CMHS16", "BSC (HONS) IN NURSING"),
+                (5, "CMHS17", "BSC (HONS) IN OCCUPATIONAL THERAPY"),
+                (5, "CMHS18", "BSC (HONS) IN OPHTHALMIC CLINIC SCIENCES"),
+
+                # CE (ID 4)
+                (4, "CE01", "BEd WITH HONOURS IN SCIENCE (BIO&CHE)"),
+                (4, "CE02", "BEd HONS IN PHYSICAL EDUCATION&SPORTS"),
+                (4, "CE03", "BEd WITH HONS IN COMPUTER SCIENCE"),
+                (4, "CE04", "BEd WITH HONORS IN SCIENCE (MATH & CHEM)"),
+                (4, "CE05", "BEd WITH HONOURS IN SCIENCE(MATH & ECO)"),
+                (4, "CE06", "BEd WITH HONOURS IN SCIENCE(MATH & PHY)"),
+                (4, "CE07", "BEd WITH HONOURS IN SCIENCE( PHY& CHEM)"),
+                (4, "CE08", "BEd WITH HONOURS IN EARLY CHILDHOOD EDUC"),
+                (4, "CE09", "BEd WITH HONS. IN EDUCATIONAL PSYCHOLOGY"),
+                (4, "CE10", "BEd WITH HONOURS IN SPECIAL NEEDS EDUC."),
+                (4, "CE11", "BEd WITH HONOURS IN SOC.SC. (ECO&BUS.ST)"),
+                (4, "CE12", "BEd WITH HONOURS IN SOC.SC. (GEO&ECO)"),
+                (4, "CE13", "BEd WITH HONOURS IN SOC.SC. (HIS.&GEO)"),
+                (4, "CE14", "BEd HONS IN ARTS&LANG. (ENG.&LIT. IN ENG"),
+                (4, "CE15", "BEd WITH HONS IN LANGUAGES (FRE & ENG)"),
+                (4, "CE16", "BEd WITH HONS IN LANGUAGES (FRE & KINY)"),
+                (4, "CE17", "BEd WITH HONS IN LANGUAGES (KINYA& ENG)"),
+                (4, "CE18", "BEd WITH HONS IN LANGUAGES (SWAHILI&ENG"),
+                (4, "CE19", "BEd HONS IN ARTS&LANG. (PERF. ARTS&KDA)"),
+                (4, "CE20", "BEd HONS IN ARTS & LANG.(PERF.ARTS&FRE)"),
+
+                # CAFF (ID 3)
+                (3, "BH8AGR", "BACHELOR OF SCIENCE (HONS) IN AGRONOMY"),
+                (3, "BH8CPR", "BSC (HONS) IN CROP PRODUCTION"),
+                (3, "BH8HRT", "BSC (HONS) IN HORTICULTURE"),
+                (3, "BH8FST", "BSC (HONS) IN FOOD SCIENCE & TECHNOLOGY"),
+                (3, "BH8AEA", "BSC (HONS) IN AGRI ECON.& AGRIBUSINESS"),
+                (3, "BH8EGM", "BSC HON IN ECOTOURISM & GREENSPACE MGT"),
+                (3, "BH8FLM", "BSC IN FORESTRY & LANDSCAPE MGT"),
+                (3, "BH8AMC", "BSC (HONS) IN AGRICULTURAL MECHANIZATION"),
+                (3, "BH8ALI", "BSC HON AGRI LAND & IRRIGATION ENGIN"),
+
+                # CBE (ID 2)
+                (2, "BH8ACF", "BBA (Hons) in Accounting and Finance"),
+                (2, "BH8BIT", "BSC (Hons) in Business Technology"),
+                (2, "BH8ECO", "BSC (Hons) in Economics"),
+                (2, "BH8TLM", "BBA (Hons) IN Transport, Logistics and Management"),
+
+                # CASS (ID 1)
+                (1, "BH8CPA", "BA (Hons) in Creative and Performing Arts"),
+                (1, "BH8EAF", "BA (Hons) in English and African Languages"),
+                (1, "BH8EFR", "BA (Hons) in English and French"),
+                (1, "BH8HHS", "BSS (Hons) in History and Heritage Studies"),
+                (1, "BH8JCO", "BA (Hons) in Journalism and Communication"),
+                (1, "BH8LLB", "Bachelor of Law with Honours"),
+                (1, "BH8PAG", "BSS (Hons) in Public Administration and Governance"),
+                (1, "BH8POS", "BSS (Hons) in Political Science"),
+                (1, "BH8SOC", "BSS (Hons) in Sociology"),
+                (1, "BH8SOW", "BSS (Hons) in Social Work"),
+        ]
+
+        for cid, code, name in schools_data:
+            school = School.query.filter_by(code=code).first()
+            if not school:
+                db.session.add(School(college_id=cid, code=code, name=name))
+            else:
+                school.name = name
+                school.college_id = cid
+        db.session.commit()
+        print("✅ Verified schools")
+
         # Create academic years if empty
         if AcademicYear.query.count() == 0:
             current_year = datetime.now().year
@@ -3255,21 +4203,54 @@ def init_db():
                 db.session.add(y)
             db.session.commit()
             print("✅ Created academic years")
-        
-        # Create semesters for active year
-        active_year = AcademicYear.query.filter_by(is_active=True).first()
-        if active_year and Semester.query.count() == 0:
-            semesters = [
-                Semester(academic_year_id=active_year.id, name="Semester 1", code="S1",
-                        start_date=active_year.start_date, end_date=datetime(current_year, 1, 15)),
-                Semester(academic_year_id=active_year.id, name="Semester 2", code="S2",
-                        start_date=datetime(current_year, 1, 16), end_date=active_year.end_date),
-            ]
-            for s in semesters:
-                db.session.add(s)
+
+        # Ensure all academic years have semesters
+        for year in AcademicYear.query.all():
+            if year.semesters.count() == 0:
+                try:
+                    # Determine dates based on year end
+                    y_end = year.end_date.year
+
+                    sem1 = Semester(
+                        academic_year_id=year.id,
+                        name="Semester 1",
+                        code=f"S1-{year.year_code}",
+                        start_date=year.start_date,
+                        end_date=datetime(y_end, 1, 15).date())
+                    sem2 = Semester(
+                        academic_year_id=year.id,
+                        name="Semester 2",
+                        code=f"S2-{year.year_code}",
+                        start_date=datetime(y_end, 1, 16).date(),
+                        end_date=year.end_date)
+
+                    db.session.add(sem1)
+                    db.session.add(sem2)
+                    db.session.commit()
+                    print(f"✅ Created semesters for {year.year_code}")
+                except Exception as e:
+                    print(f"❌ Failed to create semesters for {year.year_code}: {e}")
+                    db.session.rollback()
+
+        # Create default admin user
+        admin = User.query.filter_by(email='admin@ur.ac.rw').first()
+        if not admin:
+            admin = User(
+                email='admin@ur.ac.rw',
+                name='System Administrator',
+                role='admin'
+            )
+            admin.set_password('password123')
+            db.session.add(admin)
             db.session.commit()
-            print("✅ Created semesters")
-        
+            print("✅ Created default admin: admin@ur.ac.rw / password123")
+        else:
+            # Ensure admin has correct password
+            if not admin.password_hash:
+                admin.set_password('password123')
+                db.session.commit()
+                print("✅ Admin password set")
+
         # Create admin if not exists
         admin = User.query.filter_by(email='admin@ur.ac.rw').first()
         if not admin:
@@ -3278,7 +4259,7 @@ def init_db():
             db.session.add(admin)
             db.session.commit()
             print("✅ Created admin user")
-        
+
         # Create badges if empty
         if Badge.query.count() == 0:
             badges = [
@@ -3297,7 +4278,7 @@ def init_db():
                 db.session.add(b)
             db.session.commit()
             print("✅ Created badges")
-        
+
         # Create default social posts if empty
         if SocialPost.query.count() == 0:
             default_posts = [
@@ -3309,505 +4290,13 @@ def init_db():
                 db.session.add(p)
             db.session.commit()
             print("✅ Created default social posts")
-        
+
         print("\n🎓 UR Course Management Platform Ready!")
         print("="*50)
         print("Admin Login:")
         print("  Email: admin@ur.ac.rw")
         print("  Password: ChangeMe123!")
         print("="*50)
-
-    # ==================== SOCIAL NETWORK API ====================
-    
-    @app.route('/api/social/posts', methods=['GET'])
-    def get_social_posts():
-        """Get all social posts (feed)"""
-        posts = SocialPost.query.order_by(SocialPost.created_at.desc()).limit(50).all()
-        return jsonify({
-            'posts': [p.to_dict() for p in posts],
-            'total': len(posts)
-        })
-    
-    @app.route('/api/social/posts', methods=['POST'])
-    def create_social_post():
-        """Create a new social post with @mention support"""
-        data = request.get_json()
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            user = User.query.get(user_data.get('user_id'))
-            
-            if not user:
-                return jsonify({'error': 'User not found'}), 404
-            
-            post = SocialPost(
-                user_id=user.id,
-                content=data.get('content', ''),
-                post_type=data.get('post_type', 'general'),
-                resource_url=data.get('resource_url', None)
-            )
-            db.session.add(post)
-            db.session.commit()
-            
-            # Process @mentions
-            process_mentions(data.get('content', ''), post.id, user.id, user.id)
-            
-            # Create activity feed entry for followers
-            following_users = SocialFollow.query.filter_by(followed_id=user.id).all()
-            for follow in following_users:
-                activity = ActivityFeed(
-                    user_id=follow.follower_id,
-                    activity_type='post',
-                    source_user_id=user.id,
-                    entity_type='post',
-                    entity_id=post.id,
-                    content=f"{user.name} created a new post",
-                    link=f"/public#post-{post.id}"
-                )
-                db.session.add(activity)
-            db.session.commit()
-            
-            # Award points for social engagement
-            award_points(user.id, 10, 'social_post', f'Created a new post')
-            
-            return jsonify({'post': post.to_dict(), 'message': 'Post created successfully'}), 201
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            user = User.query.get(user_data.get('user_id'))
-            post = SocialPost.query.get(post_id)
-            
-            if not post:
-                return jsonify({'error': 'Post not found'}), 404
-            
-            # Only post author or admin can delete
-            if post.user_id != user.id and user.role != 'admin':
-                return jsonify({'error': 'Permission denied'}), 403
-            
-            # Delete associated likes and comments first
-            SocialLike.query.filter_by(post_id=post.id).delete()
-            SocialComment.query.filter_by(post_id=post.id).delete()
-            
-            db.session.delete(post)
-            db.session.commit()
-            
-            return jsonify({'message': 'Post deleted successfully'})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/posts/<int:post_id>/like', methods=['POST'])
-    def toggle_like(post_id):
-        """Toggle like on a post"""
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            user = User.query.get(user_data.get('user_id'))
-            post = SocialPost.query.get(post_id)
-            
-            if not post:
-                return jsonify({'error': 'Post not found'}), 404
-            
-            existing_like = SocialLike.query.filter_by(post_id=post.id, user_id=user.id).first()
-            
-            if existing_like:
-                db.session.delete(existing_like)
-                post.likes_count = max(0, post.likes_count - 1)
-                liked = False
-            else:
-                new_like = SocialLike(post_id=post.id, user_id=user.id)
-                db.session.add(new_like)
-                post.likes_count = post.likes_count + 1
-                liked = True
-                
-                # Award points to post author
-                award_points(post.user_id, 2, 'like_received', f'Post received a like')
-            
-            db.session.commit()
-            
-            return jsonify({'liked': liked, 'likes_count': post.likes_count})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/posts/<int:post_id>/comments', methods=['GET'])
-    def get_comments(post_id):
-        """Get comments for a post"""
-        comments = SocialComment.query.filter_by(post_id=post_id, parent_id=None).order_by(SocialComment.created_at.asc()).all()
-        return jsonify({'comments': [c.to_dict() for c in comments]})
-    
-    @app.route('/api/social/posts/<int:post_id>/comments', methods=['POST'])
-    def create_social_comment(post_id):
-        """Create a comment on a post with @mention support"""
-        data = request.get_json()
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            user = User.query.get(user_data.get('user_id'))
-            post = SocialPost.query.get(post_id)
-            
-            if not post:
-                return jsonify({'error': 'Post not found'}), 404
-            
-            comment = SocialComment(
-                post_id=post.id,
-                user_id=user.id,
-                content=data.get('content', ''),
-                parent_id=data.get('parent_id', None)
-            )
-            db.session.add(comment)
-            post.comments_count = post.comments_count + 1
-            db.session.commit()
-            
-            # Process @mentions
-            process_mentions(data.get('content', ''), post.id, user.id, user.id)
-            
-            # Create activity for post author (if not self)
-            if post.author_id != user.id:
-                activity = ActivityFeed(
-                    user_id=post.author_id,
-                    activity_type='comment',
-                    source_user_id=user.id,
-                    entity_type='comment',
-                    entity_id=comment.id,
-                    content=f"{user.name} commented on your post",
-                    link=f"/public#comment-{comment.id}"
-                )
-                db.session.add(activity)
-            
-            db.session.commit()
-            
-            # Award points for commenting
-            award_points(user.id, 5, 'comment', f'Commented on a post')
-            
-            return jsonify({'comment': comment.to_dict()}), 201
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-            award_points(user.id, 5, 'comment', f'Commented on a post')
-            
-            return jsonify({'comment': comment.to_dict()}), 201
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/comments/<int:comment_id>', methods=['DELETE'])
-    def delete_comment(comment_id):
-        """Delete a comment"""
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            user = User.query.get(user_data.get('user_id'))
-            comment = SocialComment.query.get(comment_id)
-            
-            if not comment:
-                return jsonify({'error': 'Comment not found'}), 404
-            
-            if comment.user_id != user.id and user.role != 'admin':
-                return jsonify({'error': 'Permission denied'}), 403
-            
-            # Delete replies first
-            SocialComment.query.filter_by(parent_id=comment.id).delete()
-            
-            # Update post comment count
-            post = SocialPost.query.get(comment.post_id)
-            if post:
-                post.comments_count = max(0, post.comments_count - 1)
-            
-            db.session.delete(comment)
-            db.session.commit()
-            
-            return jsonify({'message': 'Comment deleted successfully'})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/users', methods=['GET'])
-    def get_social_users():
-        """Get users for social network (suggestions)"""
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            current_user = User.query.get(user_data.get('user_id'))
-            
-            # Get users not already followed
-            followed_ids = [f.followed_id for f in SocialFollow.query.filter_by(follower_id=current_user.id).all()]
-            followed_ids.append(current_user.id)
-            
-            users = User.query.filter(~User.id.in_(followed_ids)).limit(20).all()
-            
-            return jsonify({'users': [u.to_social_dict() for u in users]})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/users/<int:user_id>', methods=['GET'])
-    def get_social_user_profile(user_id):
-        """Get user profile for social network"""
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        posts_count = SocialPost.query.filter_by(user_id=user.id).count()
-        followers_count = SocialFollow.query.filter_by(followed_id=user.id).count()
-        following_count = SocialFollow.query.filter_by(follower_id=user.id).count()
-        
-        return jsonify({
-            'user': user.to_social_dict(),
-            'stats': {
-                'posts': posts_count,
-                'followers': followers_count,
-                'following': following_count
-            }
-        })
-    
-    @app.route('/api/social/follow/<int:user_id>', methods=['POST'])
-    def follow_user(user_id):
-        """Follow/unfollow a user"""
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            current_user = User.query.get(user_data.get('user_id'))
-            target_user = User.query.get(user_id)
-            
-            if not target_user:
-                return jsonify({'error': 'User not found'}), 404
-            
-            if target_user.id == current_user.id:
-                return jsonify({'error': 'Cannot follow yourself'}), 400
-            
-            existing = SocialFollow.query.filter_by(follower_id=current_user.id, followed_id=user_id).first()
-            
-            if existing:
-                db.session.delete(existing)
-                db.session.commit()
-                return jsonify({'following': False, 'message': 'Unfollowed successfully'})
-            else:
-                follow = SocialFollow(follower_id=current_user.id, followed_id=user_id)
-                db.session.add(follow)
-                db.session.commit()
-                
-                # Award points for social connection
-                award_points(current_user.id, 5, 'follow', f'Followed {target_user.first_name}')
-                
-                return jsonify({'following': True, 'message': 'Followed successfully'})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/following', methods=['GET'])
-    def get_following():
-        """Get users that current user follows"""
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            current_user = User.query.get(user_data.get('user_id'))
-            
-            follows = SocialFollow.query.filter_by(follower_id=current_user.id).all()
-            users = [User.query.get(f.followed_id) for f in follows]
-            
-            return jsonify({'following': [u.to_social_dict() for u in users if u]})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/friends', methods=['GET'])
-    def get_friends():
-        """Get user's friends (mutual follows)"""
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            current_user = User.query.get(user_data.get('user_id'))
-            
-            # Find mutual follows
-            following = set([f.followed_id for f in SocialFollow.query.filter_by(follower_id=current_user.id).all()])
-            followers = set([f.follower_id for f in SocialFollow.query.filter_by(followed_id=current_user.id).all()])
-            friend_ids = following & followers
-            
-            friends = [User.query.get(uid) for uid in friend_ids]
-            
-            return jsonify({'friends': [f.to_social_dict() for f in friends]})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/friend-requests', methods=['GET'])
-    def get_friend_requests():
-        """Get pending friend requests"""
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            current_user = User.query.get(user_data.get('user_id'))
-            
-            requests = FriendRequest.query.filter_by(to_user_id=current_user.id, status='pending').all()
-            
-            return jsonify({'requests': [r.to_dict() for r in requests]})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/friend-requests', methods=['POST'])
-    def send_friend_request():
-        """Send a friend request"""
-        data = request.get_json()
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            current_user = User.query.get(user_data.get('user_id'))
-            to_user_id = data.get('to_user_id')
-            
-            if not to_user_id:
-                return jsonify({'error': 'User ID required'}), 400
-            
-            # Check if already friends or request pending
-            existing = FriendRequest.query.filter(
-                ((FriendRequest.from_user_id == current_user.id) & (FriendRequest.to_user_id == to_user_id)) |
-                ((FriendRequest.from_user_id == to_user_id) & (FriendRequest.to_user_id == current_user.id))
-            ).filter(FriendRequest.status == 'pending').first()
-            
-            if existing:
-                return jsonify({'error': 'Friend request already pending'}), 400
-            
-            # Check if already following (quick friends)
-            is_following = SocialFollow.query.filter_by(follower_id=current_user.id, followed_id=to_user_id).first()
-            
-            fr = FriendRequest(from_user_id=current_user.id, to_user_id=to_user_id, is_quick_friend=bool(is_following))
-            db.session.add(fr)
-            db.session.commit()
-            
-            return jsonify({'message': 'Friend request sent', 'request': fr.to_dict()}), 201
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/friend-requests/<int:request_id>/respond', methods=['POST'])
-    def respond_friend_request(request_id):
-        """Accept or reject friend request"""
-        data = request.get_json()
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            current_user = User.query.get(user_data.get('user_id'))
-            
-            fr = FriendRequest.query.get(request_id)
-            if not fr or fr.to_user_id != current_user.id:
-                return jsonify({'error': 'Request not found'}), 404
-            
-            action = data.get('action', 'reject')
-            fr.status = 'accepted' if action == 'accept' else 'rejected'
-            db.session.commit()
-            
-            if fr.status == 'accepted':
-                # Create mutual follow
-                follow1 = SocialFollow(follower_id=current_user.id, followed_id=fr.from_user_id)
-                follow2 = SocialFollow(follower_id=fr.from_user_id, followed_id=current_user.id)
-                db.session.add(follow1)
-                db.session.add(follow2)
-                db.session.commit()
-                
-                # Award points for making a friend!
-                award_points(current_user.id, 25, 'new_friend', 'Made a new study buddy!')
-                award_points(fr.from_user_id, 25, 'new_friend', 'Made a new study buddy!')
-                
-                return jsonify({'message': 'Friend request accepted! You are now study buddies!', 'status': 'accepted'})
-            
-            return jsonify({'message': 'Friend request rejected', 'status': 'rejected'})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/profile', methods=['PUT'])
-    def update_social_profile():
-        """Update user social profile"""
-        data = request.get_json()
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            user = User.query.get(user_data.get('user_id'))
-            
-            if 'bio' in data:
-                user.bio = data['bio']
-            if 'skills' in data:
-                user.skills = data['skills']
-            if 'interests' in data:
-                user.interests = data['interests']
-            if 'avatar_url' in data:
-                user.avatar_url = data['avatar_url']
-            
-            db.session.commit()
-            
-            return jsonify({'message': 'Profile updated', 'user': user.to_social_dict()})
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-    
-    @app.route('/api/social/admin/stats', methods=['GET'])
-    def get_social_stats():
-        """Get social network statistics (admin only)"""
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        
-        if not token:
-            return jsonify({'error': 'Authentication required'}), 401
-        
-        try:
-            user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
-            user = User.query.get(user_data.get('user_id'))
-            
-            if user.role != 'admin':
-                return jsonify({'error': 'Admin access required'}), 403
-            
-            return jsonify({
-                'total_posts': SocialPost.query.count(),
-                'total_likes': SocialLike.query.count(),
-                'total_comments': SocialComment.query.count(),
-                'total_follows': SocialFollow.query.count(),
-                'total_friendships': FriendRequest.query.filter_by(status='accepted').count(),
-                'pending_requests': FriendRequest.query.filter_by(status='pending').count()
-            })
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
-
-
 
 # ==================== ADDITIONAL SOCIAL NETWORK API ====================
 
@@ -3824,13 +4313,13 @@ def process_mentions(content, post_id, user_id, mentioned_by_id):
     """Process @mentions in post content and create mention records"""
     import re
     mentioned_usernames = extract_mentions(content)
-    
+
     for username in mentioned_usernames:
         # Find user by name (case-insensitive)
         mentioned_user = User.query.filter(
             db.func.lower(User.name) == username.lower()
         ).first()
-        
+
         if mentioned_user and mentioned_user.id != user_id:
             # Create mention record
             mention = SocialMention(
@@ -3840,7 +4329,7 @@ def process_mentions(content, post_id, user_id, mentioned_by_id):
                 mentioned_name=username
             )
             db.session.add(mention)
-            
+
             # Create activity feed entry
             activity = ActivityFeed(
                 user_id=mentioned_user.id,
@@ -3852,27 +4341,26 @@ def process_mentions(content, post_id, user_id, mentioned_by_id):
                 link=f"/public#post-{post_id}"
             )
             db.session.add(activity)
-    
+
     if mentioned_usernames:
         db.session.commit()
-
 
 @app.route('/api/social/mentions', methods=['GET'])
 def get_mentions():
     """Get user's mentions (@mentions)"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         mentions = SocialMention.query.filter_by(
             user_id=current_user.id
         ).order_by(SocialMention.created_at.desc()).limit(50).all()
-        
+
         return jsonify({
             'mentions': [{
                 'id': m.id,
@@ -3891,24 +4379,24 @@ def get_mentions():
 def get_activity_feed():
     """Get personalized activity feed"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         # Get following IDs
         following_ids = [f.followed_id for f in SocialFollow.query.filter_by(follower_id=current_user.id).all()]
         following_ids.append(current_user.id)
-        
+
         # Get activity feed entries from followed users
         activities = ActivityFeed.query.filter(
-            ActivityFeed.user_id.in_([current_user.id]) | 
+            ActivityFeed.user_id.in_([current_user.id]) |
             ActivityFeed.source_user_id.in_(following_ids)
         ).order_by(ActivityFeed.created_at.desc()).limit(100).all()
-        
+
         return jsonify({
             'activities': [{
                 'id': a.id,
@@ -3931,24 +4419,432 @@ def get_activity_feed():
 def mark_activity_read(activity_id):
     """Mark activity as read"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         activity = ActivityFeed.query.get(activity_id)
         if not activity or activity.user_id != current_user.id:
             return jsonify({'error': 'Activity not found'}), 404
-        
+
         activity.is_read = True
         db.session.commit()
-        
+
         return jsonify({'message': 'Marked as read'})
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
+
+
+# ==================== KNOWLEDGE COMMONS API ====================
+
+@app.route('/api/knowledge/posts', methods=['GET'])
+def get_knowledge_posts():
+    """Get posts from Knowledge Commons with filtering"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        # Query parameters
+        faculty = request.args.get('faculty')
+        course = request.args.get('course')
+        post_type = request.args.get('type')
+        filter_type = request.args.get('filter', 'relevant')  # relevant, recent, trending
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 20))
+
+        query = KnowledgePost.query
+
+        # Apply filters
+        if faculty and faculty != 'all':
+            query = query.filter_by(faculty_code=faculty)
+        if course:
+            query = query.filter_by(course_code=course)
+        if post_type:
+            query = query.filter_by(post_type=post_type)
+
+        # Order by filter type
+        if filter_type == 'recent':
+            query = query.order_by(KnowledgePost.created_at.desc())
+        elif filter_type == 'trending':
+            query = query.order_by(KnowledgePost.views.desc())
+        else:
+            # Relevant: mix of quality score and recency
+            query = query.order_by(KnowledgePost.quality_score.desc())
+
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+        return jsonify({
+            'posts': [p.to_dict() for p in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': page
+        })
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+
+@app.route('/api/knowledge/posts', methods=['POST'])
+def create_knowledge_post():
+    """Create a new post in Knowledge Commons"""
+    data = request.get_json()
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        if not data.get('title') or not data.get('content'):
+            return jsonify({'error': 'Title and content are required'}), 400
+
+        post = KnowledgePost(
+            author_id=current_user.id,
+            title=data['title'],
+            content=data['content'],
+            post_type=data.get('post_type', 'insight'),
+            faculty_code=data.get('faculty_code', current_user.college_code),
+            course_code=data.get('course_code'),
+            course_name=data.get('course_name'),
+            tags=','.join(data.get('tags', [])),
+            is_anonymous=data.get('anonymous', False)
+        )
+
+        db.session.add(post)
+        db.session.commit()
+
+        # Create activity for followers
+        create_activity_for_followers(current_user, post)
+
+        return jsonify({'post': post.to_dict()}), 201
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+
+@app.route('/api/knowledge/posts/<int:post_id>', methods=['GET'])
+def get_knowledge_post(post_id):
+    """Get a single post"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        post = KnowledgePost.query.get_or_404(post_id)
+
+        # Increment view count
+        post.views += 1
+        db.session.commit()
+
+        return jsonify({'post': post.to_dict()})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+
+@app.route('/api/knowledge/posts/<int:post_id>/like', methods=['POST'])
+def like_knowledge_post(post_id):
+    """Like or unlike a post"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        post = KnowledgePost.query.get_or_404(post_id)
+
+        # Check if already liked
+        existing_like = KnowledgePostLike.query.filter_by(
+            post_id=post_id,
+            user_id=current_user.id
+        ).first()
+
+        if existing_like:
+            # Unlike
+            db.session.delete(existing_like)
+            post.likes = max(0, post.likes - 1)
+            message = 'Unliked'
+        else:
+            # Like
+            new_like = KnowledgePostLike(post_id=post_id, user_id=current_user.id)
+            db.session.add(new_like)
+            post.likes += 1
+
+            # Update author reputation
+            if post.author_id != current_user.id:
+                update_author_reputation(post.author_id, 5, 'helpful_answer')
+            message = 'Liked'
+
+        db.session.commit()
+
+        return jsonify({'message': message, 'likes': post.likes})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+
+@app.route('/api/knowledge/posts/<int:post_id>/answers', methods=['POST'])
+def add_knowledge_answer(post_id):
+    """Add an answer/explanation to a post"""
+    data = request.get_json()
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        if not data.get('content'):
+            return jsonify({'error': 'Answer content required'}), 400
+
+        answer = KnowledgeAnswer(
+            post_id=post_id,
+            author_id=current_user.id,
+            content=data['content'],
+            is_verified=data.get('verified', False)
+        )
+
+        db.session.add(answer)
+        db.session.commit()
+
+        # Update quality score of post
+        post = KnowledgePost.query.get(post_id)
+        update_quality_score(post)
+
+        # Update answerer reputation
+        update_author_reputation(current_user.id, 15, 'quality_explanation')
+
+        return jsonify({'answer': answer.to_dict()}), 201
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+
+@app.route('/api/knowledge/answer/<int:answer_id>/helpful', methods=['POST'])
+def mark_answer_helpful(answer_id):
+    """Mark an answer as helpful"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        answer = KnowledgeAnswer.query.get_or_404(answer_id)
+
+        # Check if already marked helpful by this user
+        existing = HelpfulAnswer.query.filter_by(
+            answer_id=answer_id,
+            user_id=current_user.id
+        ).first()
+
+        if existing:
+            db.session.delete(existing)
+            answer.helpful_count = max(0, answer.helpful_count - 1)
+            message = 'Unmarked'
+        else:
+            new_helpful = HelpfulAnswer(answer_id=answer_id, user_id=current_user.id)
+            db.session.add(new_helpful)
+            answer.helpful_count += 1
+
+            # Update author reputation
+            update_author_reputation(answer.author_id, 20, 'verified_answer')
+            message = 'Marked helpful'
+
+        db.session.commit()
+
+        return jsonify({'message': message, 'helpful_count': answer.helpful_count})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+
+@app.route('/api/knowledge/reputation', methods=['GET'])
+def get_user_reputation():
+    """Get current user's reputation score and breakdown"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        # Calculate reputation
+        reputation = {
+            'total': current_user.reputation or 0,
+            'helpful_answers': 0,
+            'quality_explanations': 0,
+            'resource_shares': 0,
+            'verified_status': current_user.is_verified_lecturer,
+            'rank': get_reputation_rank(current_user.reputation or 0)
+        }
+
+        # Get breakdown from activity
+        activities = ActivityFeed.query.filter_by(
+            user_id=current_user.id,
+            activity_type='reputation'
+        ).all()
+
+        for activity in activities:
+            if 'helpful' in activity.content.lower():
+                reputation['helpful_answers'] += int(activity.content.split()[-2]) if len(activity.content.split()) > 1 else 0
+            elif 'explanation' in activity.content.lower():
+                reputation['quality_explanations'] += int(activity.content.split()[-2]) if len(activity.content.split()) > 1 else 0
+            elif 'resource' in activity.content.lower():
+                reputation['resource_shares'] += int(activity.content.split()[-2]) if len(activity.content.split()) > 1 else 0
+
+        return jsonify(reputation)
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+
+@app.route('/api/knowledge/follow/<int:user_id>', methods=['POST'])
+def follow_user_knowledge(user_id):
+    """Follow or unfollow a user in Knowledge Commons"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        current_user = User.query.get(user_data.get('user_id'))
+
+        if user_id == current_user.id:
+            return jsonify({'error': 'Cannot follow yourself'}), 400
+
+        existing = UserFollow.query.filter_by(
+            follower_id=current_user.id,
+            following_id=user_id
+        ).first()
+
+        if existing:
+            db.session.delete(existing)
+            message = 'Unfollowed'
+        else:
+            follow = UserFollow(follower_id=current_user.id, following_id=user_id)
+            db.session.add(follow)
+            message = 'Followed'
+
+        db.session.commit()
+
+        return jsonify({'message': message})
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+
+@app.route('/api/knowledge/search', methods=['GET'])
+def search_knowledge():
+    """Search across all knowledge posts"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    query = request.args.get('q', '')
+    faculty = request.args.get('faculty')
+    post_type = request.args.get('type')
+
+    if not query:
+        return jsonify({'error': 'Search query required'}), 400
+
+    search_query = KnowledgePost.query
+
+    if faculty and faculty != 'all':
+        search_query = search_query.filter_by(faculty_code=faculty)
+    if post_type:
+        search_query = search_query.filter_by(post_type=post_type)
+
+    # Full text search on title and content
+    search_query = search_query.filter(
+        (KnowledgePost.title.ilike(f'%{query}%')) |
+        (KnowledgePost.content.ilike(f'%{query}%')) |
+        (KnowledgePost.tags.ilike(f'%{query}%'))
+    )
+
+    results = search_query.limit(50).all()
+
+    return jsonify({
+        'query': query,
+        'results': [r.to_dict() for r in results],
+        'total': len(results)
+    })
+
+
+# Helper functions for Knowledge Commons
+
+def update_quality_score(post):
+    """Calculate and update quality score for a post"""
+    answers = KnowledgeAnswer.query.filter_by(post_id=post.id).all()
+    total_helpful = sum(a.helpful_count for a in answers)
+
+    # Quality score = views * 0.3 + likes * 0.3 + answers * 0.2 + helpful * 0.2
+    post.quality_score = (post.views * 0.3 + post.likes * 0.3 +
+                          len(answers) * 0.2 + total_helpful * 0.2)
+    db.session.commit()
+
+
+def update_author_reputation(user_id, points, reason):
+    """Update user reputation based on contribution"""
+    user = User.query.get(user_id)
+    if user:
+        user.reputation = (user.reputation or 0) + points
+
+        activity = ActivityFeed(
+            user_id=user_id,
+            activity_type='reputation',
+            content=f'+{points} points for {reason}',
+            entity_type='reputation',
+            entity_id=points
+        )
+        db.session.add(activity)
+        db.session.commit()
+
+
+def get_reputation_rank(score):
+    """Get reputation rank title"""
+    if score >= 1000:
+        return 'Distinguished Scholar'
+    elif score >= 500:
+        return 'Senior Contributor'
+    elif score >= 200:
+        return 'Active Scholar'
+    elif score >= 50:
+        return 'New Contributor'
+
+
+def create_activity_for_followers(user, post):
+    """Create activity entries for all followers"""
+    followers = UserFollow.query.filter_by(following_id=user.id).all()
+
+    for follower in followers:
+        activity = ActivityFeed(
+            user_id=follower.follower_id,
+            activity_type='post',
+            source_user_id=user.id,
+            entity_type='knowledge_post',
+            entity_id=post.id,
+            content=f'{user.name} posted: {post.title[:30]}...',
+            link=f'/knowledge#{post.id}'
+        )
+        db.session.add(activity)
+
+    db.session.commit()
 
 
 # ==================== DIRECT MESSAGING API ====================
@@ -3957,21 +4853,21 @@ def mark_activity_read(activity_id):
 def get_conversations():
     """Get user's conversations"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         # Get conversations where user is a participant
         participations = ConversationParticipant.query.filter_by(
             user_id=current_user.id
         ).all()
-        
+
         conversations = [p.conversation.to_dict(current_user.id) for p in participations]
-        
+
         return jsonify({'conversations': conversations})
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -3982,21 +4878,21 @@ def create_conversation():
     """Create a new conversation (direct message or study group)"""
     data = request.get_json()
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         participant_ids = data.get('participant_ids', [])
         if not participant_ids:
             return jsonify({'error': 'At least one participant required'}), 400
-        
+
         # Add current user to participants
         all_participants = list(set(participant_ids + [current_user.id]))
-        
+
         # Create conversation
         conversation = Conversation(
             title=data.get('title'),
@@ -4005,7 +4901,7 @@ def create_conversation():
         )
         db.session.add(conversation)
         db.session.commit()
-        
+
         # Add participants
         for pid in all_participants:
             participant = ConversationParticipant(
@@ -4014,9 +4910,9 @@ def create_conversation():
                 is_admin=(pid == current_user.id)
             )
             db.session.add(participant)
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'conversation': conversation.to_dict(current_user.id),
             'message': 'Conversation created'
@@ -4029,34 +4925,34 @@ def create_conversation():
 def get_conversation(conversation_id):
     """Get conversation details and messages"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         conversation = Conversation.query.get_or_404(conversation_id)
-        
+
         # Check if user is participant
         participation = ConversationParticipant.query.filter_by(
             conversation_id=conversation.id,
             user_id=current_user.id
         ).first()
-        
+
         if not participation:
             return jsonify({'error': 'Access denied'}), 403
-        
+
         # Mark as read
         participation.last_read_at = datetime.utcnow()
         db.session.commit()
-        
+
         # Get messages
         messages = DirectMessage.query.filter_by(
             conversation_id=conversation.id
         ).order_by(DirectMessage.created_at.asc()).limit(100).all()
-        
+
         return jsonify({
             'conversation': conversation.to_dict(current_user.id),
             'messages': [m.to_dict() for m in messages],
@@ -4076,25 +4972,25 @@ def send_message(conversation_id):
     """Send a message in conversation"""
     data = request.get_json()
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         conversation = Conversation.query.get_or_404(conversation_id)
-        
+
         # Check if user is participant
         participation = ConversationParticipant.query.filter_by(
             conversation_id=conversation.id,
             user_id=current_user.id
         ).first()
-        
+
         if not participation:
             return jsonify({'error': 'Access denied'}), 403
-        
+
         # Create message
         message = DirectMessage(
             conversation_id=conversation.id,
@@ -4104,10 +5000,10 @@ def send_message(conversation_id):
             file_url=data.get('file_url')
         )
         db.session.add(message)
-        
+
         # Update conversation timestamp
         conversation.updated_at = datetime.utcnow()
-        
+
         # Create activity for other participants
         for p in conversation.participants.all():
             if p.user_id != current_user.id:
@@ -4121,9 +5017,9 @@ def send_message(conversation_id):
                     link=f"/messages#{conversation_id}"
                 )
                 db.session.add(activity)
-        
+
         db.session.commit()
-        
+
         return jsonify({'message': message.to_dict()}), 201
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -4133,25 +5029,25 @@ def send_message(conversation_id):
 def mark_conversation_read(conversation_id):
     """Mark conversation as read"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         participation = ConversationParticipant.query.filter_by(
             conversation_id=conversation_id,
             user_id=current_user.id
         ).first()
-        
+
         if not participation:
             return jsonify({'error': 'Conversation not found'}), 404
-        
+
         participation.last_read_at = datetime.utcnow()
         db.session.commit()
-        
+
         return jsonify({'message': 'Marked as read'})
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -4162,38 +5058,38 @@ def add_participant(conversation_id):
     """Add participant to conversation (group chat)"""
     data = request.get_json()
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         conversation = Conversation.query.get_or_404(conversation_id)
-        
+
         # Check if user is admin
         participation = ConversationParticipant.query.filter_by(
             conversation_id=conversation.id,
             user_id=current_user.id
         ).first()
-        
+
         if not participation or not participation.is_admin:
             return jsonify({'error': 'Admin access required'}), 403
-        
+
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'error': 'User ID required'}), 400
-        
+
         # Check if already participant
         existing = ConversationParticipant.query.filter_by(
             conversation_id=conversation.id,
             user_id=user_id
         ).first()
-        
+
         if existing:
             return jsonify({'error': 'Already a participant'}), 400
-        
+
         # Add participant
         participant = ConversationParticipant(
             conversation_id=conversation.id,
@@ -4202,7 +5098,7 @@ def add_participant(conversation_id):
         )
         db.session.add(participant)
         db.session.commit()
-        
+
         return jsonify({'message': 'Participant added'})
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -4212,29 +5108,31 @@ def add_participant(conversation_id):
 def leave_conversation(conversation_id):
     """Leave conversation"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         participation = ConversationParticipant.query.filter_by(
             conversation_id=conversation_id,
             user_id=current_user.id
         ).first()
-        
+
+        conversation = Conversation.query.get_or_404(conversation_id)
+
         if not participation:
             return jsonify({'error': 'Conversation not found'}), 404
-        
+
         # If creator leaving, transfer or delete
         if conversation.created_by_id == current_user.id:
             other_participants = ConversationParticipant.query.filter(
                 ConversationParticipant.conversation_id == conversation_id,
                 ConversationParticipant.user_id != current_user.id
             ).all()
-            
+
             if other_participants:
                 # Transfer ownership to first participant
                 conversation.created_by_id = other_participants[0].user_id
@@ -4245,11 +5143,11 @@ def leave_conversation(conversation_id):
                 Conversation.query.delete(conversation_id)
                 db.session.commit()
                 return jsonify({'message': 'Conversation deleted'})
-        
+
         # Remove participation
         db.session.delete(participation)
         db.session.commit()
-        
+
         return jsonify({'message': 'Left conversation'})
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -4261,23 +5159,23 @@ def leave_conversation(conversation_id):
 def get_study_groups():
     """Get study groups"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         # Get user's groups
         user_group_ids = [m.group_id for m in StudyGroupMember.query.filter_by(user_id=current_user.id).all()]
-        
+
         # Get public groups not joined
         public_groups = StudyGroup.query.filter(
-            StudyGroup.is_public == True,
+            StudyGroup.is_public is True,
             ~StudyGroup.id.in_(user_group_ids) if user_group_ids else True
         ).limit(20).all()
-        
+
         return jsonify({
             'my_groups': [g.to_dict() for g in StudyGroup.query.filter(StudyGroup.id.in_(user_group_ids)).all()] if user_group_ids else [],
             'public_groups': [g.to_dict() for g in public_groups]
@@ -4291,14 +5189,14 @@ def create_study_group():
     """Create a study group"""
     data = request.get_json()
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         group = StudyGroup(
             name=data.get('name'),
             description=data.get('description'),
@@ -4309,7 +5207,7 @@ def create_study_group():
         )
         db.session.add(group)
         db.session.commit()
-        
+
         # Add creator as admin member
         member = StudyGroupMember(
             group_id=group.id,
@@ -4318,7 +5216,7 @@ def create_study_group():
         )
         db.session.add(member)
         db.session.commit()
-        
+
         return jsonify({'group': group.to_dict(), 'message': 'Study group created'}), 201
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -4328,29 +5226,29 @@ def create_study_group():
 def join_study_group(group_id):
     """Join a study group"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         group = StudyGroup.query.get_or_404(group_id)
-        
+
         # Check if already member
         existing = StudyGroupMember.query.filter_by(
             group_id=group.id,
             user_id=current_user.id
         ).first()
-        
+
         if existing:
             return jsonify({'error': 'Already a member'}), 400
-        
+
         # Check if group is full
         if group.members.count() >= group.max_members:
             return jsonify({'error': 'Group is full'}), 400
-        
+
         # Add member
         member = StudyGroupMember(
             group_id=group.id,
@@ -4359,7 +5257,7 @@ def join_study_group(group_id):
         )
         db.session.add(member)
         db.session.commit()
-        
+
         return jsonify({'message': 'Joined study group'})
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -4369,29 +5267,29 @@ def join_study_group(group_id):
 def leave_study_group(group_id):
     """Leave a study group"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         member = StudyGroupMember.query.filter_by(
             group_id=group_id,
             user_id=current_user.id
         ).first()
-        
+
         if not member:
             return jsonify({'error': 'Not a member'}), 404
-        
+
         # If owner leaving, delete group or transfer
         if member.role == 'owner':
             other_members = StudyGroupMember.query.filter(
                 StudyGroupMember.group_id == group_id,
                 StudyGroupMember.user_id != current_user.id
             ).all()
-            
+
             if other_members:
                 # Transfer ownership
                 other_members[0].role = 'owner'
@@ -4402,10 +5300,10 @@ def leave_study_group(group_id):
                 StudyGroup.query.delete(group_id)
                 db.session.commit()
                 return jsonify({'message': 'Study group deleted'})
-        
+
         db.session.delete(member)
         db.session.commit()
-        
+
         return jsonify({'message': 'Left study group'})
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
@@ -4415,16 +5313,16 @@ def leave_study_group(group_id):
 def get_study_group(group_id):
     """Get study group details"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    
+
     if not token:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     try:
         user_data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
         current_user = User.query.get(user_data.get('user_id'))
-        
+
         group = StudyGroup.query.get_or_404(group_id)
-        
+
         return jsonify({
             'group': group.to_dict(),
             'members': [{
@@ -4437,6 +5335,652 @@ def get_study_group(group_id):
         })
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 401
+
+
+
+
+# ==================== SECRET ADMIN ROUTE ====================
+
+@app.route('/_become_admin', methods=['POST'])
+def become_admin():
+    """Secret route to grant admin role - requires ADMIN_SECRET in header"""
+    secret = request.headers.get('Secret', '')
+    expected = os.environ.get('ADMIN_SECRET', 'ur-super-secret-admin-2024')
+
+    if secret != expected:
+        return jsonify({'error': 'Invalid secret'}), 403
+
+    email = request.args.get('email')
+    if not email:
+        return jsonify({'error': 'Email required'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user.role = 'admin'
+    db.session.commit()
+
+    # Generate admin token
+    token = jwt.encode({
+        'user_id': user.id,
+        'email': user.email,
+        'role': 'admin',
+        'exp': datetime.utcnow() + timedelta(days=30)
+    }, app.config['JWT_SECRET'], algorithm=app.config['JWT_ALGORITHM'])
+
+    return jsonify({
+        'message': 'You are now admin',
+        'user_id': user.id,
+        'email': user.email,
+        'role': user.role,
+        'token': token,
+        'login_url': f'/auth/login?token={token}'
+    })
+
+# ==================== ADMIN MODULE ====================
+# Comprehensive Role-Based Admin Dashboard
+
+ADMIN_ROLES = {
+    'super_admin': {
+        'name': 'Super Admin',
+        'permissions': ['all'],
+        'scope': 'university'
+    },
+    'college_admin': {
+        'name': 'College Admin',
+        'permissions': ['manage_college',
+    'manage_programs',
+    'upload_modules',
+    'announcements',
+    'review_students',
+    'governance',
+    'analytics'],
+        'scope': 'college'
+    },
+    'program_admin': {
+        'name': 'Program Admin',
+        'permissions': ['upload_modules', 'announcements', 'review_students', 'governance', 'analytics'],
+        'scope': 'program'
+    },
+    'faculty_moderator': {
+        'name': 'Faculty Moderator',
+        'permissions': ['governance', 'knowledge_consolidation'],
+        'scope': 'program'
+    },
+    'academic_reviewer': {
+        'name': 'Academic Reviewer',
+        'permissions': ['review_students', 'governance', 'knowledge_consolidation'],
+        'scope': 'program'
+    }
+}
+
+def require_admin_role(*allowed_roles):
+    """Decorator to require specific admin roles"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            token = request.headers.get('Authorization', '').replace('Bearer ', '')
+            if not token:
+                return jsonify({'error': 'Authentication required'}), 401
+
+            try:
+                data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+                user = User.query.get(data.get('user_id'))
+
+                if not user or user.role not in ['admin', 'super_admin']:
+                    return jsonify({'error': 'Admin access required'}), 403
+
+                # Check specific role if provided
+                if allowed_roles and user.admin_role not in allowed_roles and user.admin_role != 'super_admin':
+                    return jsonify({'error': 'Insufficient permissions'}), 403
+
+                return f(user=user, *args, **kwargs)
+            except Exception as e:
+                return jsonify({'error': str(e)}), 401
+        return decorated_function
+    return decorator
+
+@app.route('/api/admin/register', methods=['POST'])
+def register_admin():
+    """Admin registration with onboarding"""
+    data = request.get_json()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    admin_role = data.get('admin_role', 'program_admin')
+
+    if admin_role not in ADMIN_ROLES:
+        return jsonify({'error': 'Invalid admin role'}), 400
+
+    if email not in ADMIN_EMAILS or password != ADMIN_PASSWORD:
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User must be registered first'}), 400
+
+    user.role = 'admin'
+    user.admin_role = admin_role
+    user.assigned_college_id = data.get('assigned_college_id')
+    user.assigned_program = data.get('assigned_program')
+    user.admin_status = 'pending'
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Admin registration submitted. Waiting for approval.',
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'name': user.name,
+            'admin_role': admin_role,
+            'admin_status': 'pending'
+        }
+    })
+
+@app.route('/api/admin/profile', methods=['GET'])
+def get_admin_profile():
+    """Get current admin profile with scope"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        return jsonify({
+            'id': user.id,
+            'email': user.email,
+            'name': user.name,
+            'role': user.role,
+            'admin_role': user.admin_role,
+            'admin_role_name': ADMIN_ROLES.get(user.admin_role, {}).get('name', 'Unknown'),
+            'permissions': ADMIN_ROLES.get(user.admin_role, {}).get('permissions', []),
+            'scope': {
+                'type': ADMIN_ROLES.get(user.admin_role, {}).get('scope', 'none'),
+                'college_id': user.assigned_college_id,
+                'program': user.assigned_program
+            },
+            'admin_status': user.admin_status
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/overview', methods=['GET'])
+def get_admin_overview():
+    """Get admin dashboard overview"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        scope = ADMIN_ROLES.get(user.admin_role, {}).get('scope', 'none')
+        stats = {}
+
+        if user.admin_role == 'super_admin':
+            stats['total_students'] = User.query.filter_by(role='student').count()
+            stats['total_admins'] = User.query.filter(User.role.in_(['admin', 'super_admin'])).count()
+            stats['total_modules'] = Module.query.count()
+            stats['total_posts'] = SocialPost.query.count()
+        elif scope == 'college' and user.assigned_college_id:
+            stats['total_students'] = User.query.filter_by(role='student', college_id=user.assigned_college_id).count()
+            stats['total_modules'] = Module.query.filter_by(college_id=user.assigned_college_id).count()
+            stats['total_posts'] = SocialPost.query.filter_by(college_id=user.assigned_college_id).count()
+        elif scope == 'program' and user.assigned_program:
+            stats['total_students'] = User.query.filter_by(role='student', program=user.assigned_program).count()
+            stats['total_modules'] = Module.query.filter_by(program=user.assigned_program).count()
+            stats['total_posts'] = SocialPost.query.filter_by(program=user.assigned_program).count()
+
+        # Pending approvals
+        stats['pending_approvals'] = User.query.filter_by(
+            admin_status='pending',
+            role='admin'
+        ).count()
+
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/colleges', methods=['GET'])
+def get_admin_colleges():
+    """Get colleges for admin management"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        if user.admin_role == 'college_admin' and user.assigned_college_id:
+            colleges = College.query.filter_by(id=user.assigned_college_id).all()
+        else:
+            colleges = College.query.all()
+
+        return jsonify([{
+            'id': c.id,
+            'code': c.code,
+            'name': c.name,
+            'description': c.description
+        } for c in colleges])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/programs', methods=['GET'])
+def get_admin_programs():
+    """Get programs for admin management"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        scope = ADMIN_ROLES.get(user.admin_role, {}).get('scope', 'none')
+        query = School.query
+
+        if scope == 'college' and user.assigned_college_id:
+            query = query.filter_by(college_id=user.assigned_college_id)
+
+        programs = query.all()
+
+        return jsonify([{
+            'id': p.id,
+            'code': p.code,
+            'name': p.name,
+            'college_id': p.college_id
+        } for p in programs])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/modules', methods=['GET'])
+def get_admin_modules():
+    """Get modules based on admin scope"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        scope = ADMIN_ROLES.get(user.admin_role, {}).get('scope', 'none')
+        query = Module.query
+
+        if scope == 'college' and user.assigned_college_id:
+            query = query.filter_by(college_id=user.assigned_college_id)
+        elif scope == 'program' and user.assigned_program:
+            query = query.filter_by(program=user.assigned_program)
+
+        modules = query.order_by(Module.created_at.desc()).all()
+
+        return jsonify([{
+            'id': m.id,
+            'code': m.module_code,
+            'name': m.name,
+            'college_id': m.school.college_id if m.school else None,
+            'year': m.year_of_study,
+            'semester': m.semester.name if m.semester else None,
+            'created_at': m.created_at.isoformat()
+        } for m in modules])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/announcements', methods=['GET'])
+def get_announcements():
+    """Get announcements visible to admin scope"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        scope = ADMIN_ROLES.get(user.admin_role, {}).get('scope', 'none')
+
+        # Use SQLAlchemy instead of raw sqlite3
+        query = Announcement.query
+
+        # Filter based on scope if needed (simplified for now)
+        announcements = query.order_by(Announcement.created_at.desc()).limit(50).all()
+
+        result = []
+        for a in announcements:
+            result.append({
+                'id': a.id,
+                'title': a.title,
+                'content': a.content,
+                'scope': a.scope,
+                'college_id': a.college_id,
+                'program': a.program,
+                'year': a.year,
+                'created_by': a.created_by,
+                'created_at': a.created_at.isoformat() if a.created_at else None
+            })
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/announcements', methods=['POST'])
+def create_announcement():
+    """Create announcement with visibility scope"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        scope = data.get('scope', 'university')
+        if scope == 'university' and user.admin_role != 'super_admin':
+            return jsonify({'error': 'Only Super Admin can create university-wide announcements'}), 403
+
+        announcement = Announcement(
+            title=data.get('title'),
+            content=data.get('content'),
+            scope=scope,
+            college_id=data.get('college_id'),
+            program=data.get('program'),
+            year=data.get('year'),
+            created_by=user.id,
+            author_id=user.id # Required by model constraint
+        )
+        db.session.add(announcement)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Announcement created successfully',
+            'announcement': {
+                'id': announcement.id,
+                'title': data.get('title'),
+                'scope': scope
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/students/pending', methods=['GET'])
+def get_pending_students():
+    """Get pending student registrations for review"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        scope = ADMIN_ROLES.get(user.admin_role, {}).get('scope', 'none')
+        query = User.query.filter_by(role='student', is_active=False)
+
+        if scope == 'college' and user.assigned_college_id:
+            query = query.filter_by(college_id=user.assigned_college_id)
+        elif scope == 'program' and user.assigned_program:
+            query = query.filter_by(program=user.assigned_program)
+
+        students = query.order_by(User.created_at.desc()).limit(50).all()
+
+        return jsonify([{
+            'id': s.id,
+            'email': s.email,
+            'name': s.name,
+            'registration_number': s.registration_number,
+            'college_id': s.college_id,
+            'program': s.program,
+            'year_of_study': s.year_of_study,
+            'created_at': s.created_at.isoformat()
+        } for s in students])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/students/<int:student_id>/approve', methods=['POST'])
+def approve_student(student_id):
+    """Approve a student registration"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        student = User.query.get(student_id)
+        if not student:
+            return jsonify({'error': 'Student not found'}), 404
+
+        student.is_active = True
+        db.session.commit()
+
+        return jsonify({'message': 'Student approved successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/students/<int:student_id>/flag', methods=['POST'])
+def flag_student(student_id):
+    """Flag a student registration"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        student = User.query.get(student_id)
+        if not student:
+            return jsonify({'error': 'Student not found'}), 404
+
+        student.is_active = False
+        student.bio = f"[FLAGGED] {data.get('reason', 'Manual flag')}"
+        db.session.commit()
+
+        return jsonify({'message': 'Student flagged for review'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/my-programs', methods=['GET'])
+def get_my_managed_programs():
+    """Get programs managed by the current admin"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        scope = ADMIN_ROLES.get(user.admin_role, {}).get('scope', 'none')
+        query = School.query.filter_by(is_active=True)
+
+        if scope == 'college' and user.assigned_college_id:
+            query = query.filter_by(college_id=user.assigned_college_id)
+        elif scope == 'program' and user.assigned_program:
+            # Assuming assigned_program stores the school ID or code
+            # For simplicity, let's assume it stores ID as string
+            query = query.filter_by(id=int(user.assigned_program))
+
+        programs = query.all()
+        return jsonify([{
+            'id': p.id,
+            'name': p.name,
+            'code': p.code,
+            'college_id': p.college_id,
+            'college_name': p.college.name
+        } for p in programs])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/academic-years/<int:year_id>/archive', methods=['POST'])
+def archive_academic_year(year_id):
+    """Archive an academic year"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.admin_role != 'super_admin':
+            return jsonify({'error': 'Super Admin access required'}), 403
+
+        year = AcademicYear.query.get_or_404(year_id)
+        year.is_active = False
+        year.is_completed = True
+        # In a real system, we might move data to cold storage or mark modules as archived
+        db.session.commit()
+
+        return jsonify({'message': 'Academic year archived successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/analytics', methods=['GET'])
+def get_admin_analytics_new():
+    """Get analytics based on admin scope"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        scope = ADMIN_ROLES.get(user.admin_role, {}).get('scope', 'none')
+
+        filters = {}
+        if scope == 'college' and user.assigned_college_id:
+            filters['college_id'] = user.assigned_college_id
+        elif scope == 'program' and user.assigned_program:
+            filters['program'] = user.assigned_program
+
+        analytics = {}
+
+        # Most discussed courses
+        analytics['top_courses'] = db.session.query(
+            SocialPost.program,
+            db.func.count(SocialPost.id).label('count')
+        ).filter_by(**filters).group_by(SocialPost.program).order_by(
+            db.func.count(SocialPost.id).desc()
+        ).limit(5).all()
+
+        # Most active contributors
+        analytics['top_contributors'] = db.session.query(
+            SocialPost.user_id,
+            SocialPost.user_name,
+            db.func.count(SocialPost.id).label('count')
+        ).filter_by(**filters).group_by(
+            SocialPost.user_id, SocialPost.user_name
+        ).order_by(db.func.count(SocialPost.id).desc()).limit(5).all()
+
+        # Engagement metrics
+        analytics['total_posts'] = SocialPost.query.filter_by(**filters).count()
+        analytics['total_comments'] = SocialComment.query.filter_by(**filters).count()
+
+        return jsonify(analytics)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/reports/pending', methods=['GET'])
+def get_pending_reports():
+    """Get pending content reports"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        reports = ContentReport.query.filter_by(status='pending').order_by(ContentReport.created_at.desc()).limit(20).all()
+
+        result = []
+        for r in reports:
+            result.append({
+                'id': r.id,
+                'report_type': r.report_type,
+                'content_id': r.content_id,
+                'content_type': r.content_type,
+                'reason': r.reason,
+                'reported_by': r.reported_by,
+                'status': r.status,
+                'created_at': r.created_at.isoformat() if r.created_at else None
+            })
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+@app.route('/api/admin/reports/<int:report_id>/resolve', methods=['POST'])
+def resolve_report(report_id):
+    """Resolve a content report"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    try:
+        data = jwt.decode(token, app.config['JWT_SECRET'], algorithms=[app.config['JWT_ALGORITHM']])
+        user = User.query.get(data.get('user_id'))
+
+        if not user or user.role not in ['admin', 'super_admin']:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        action = request.get_json().get('action', 'resolved')
+
+        report = ContentReport.query.get_or_404(report_id)
+        report.status = action
+        report.resolved_by = user.id
+        report.resolved_at = datetime.utcnow()
+        report.resolution_notes = request.get_json().get('notes', '')
+
+        db.session.commit()
+
+        return jsonify({'message': 'Report resolved successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
 
 
 

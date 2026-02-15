@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .register-card {
+            background: var(--header-bg);
+            border-radius: 16px;
+            padding: 2.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .register-logo {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.75rem;
+        }
+
+        .register-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .register-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .form-group label .required {
+            color: var(--danger);
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(198, 153, 60, 0.1);
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .register-btn {
+            width: 100%;
+            padding: 0.9rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .terms {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .terms a {
+            color: var(--accent);
+            cursor: pointer;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .login-link {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .login-link a {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: var(--accent);
+        }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        .alert.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+        }
+
+        .info-box {
+            background: rgba(198, 153, 60, 0.1);
+            border: 1px solid rgba(198, 153, 60, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box h4 {
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-card">
+            <div class="register-header">
+                <div class="register-logo">
+                    <i class="fas fa-university" style="color: white;"></i>
+                </div>
+                <h1>Create Account</h1>
+                <p>Register with your University of Rwanda credentials</p>
+            </div>
+
+            <div id="alertBox" class="alert"></div>
+
+            <div class="info-box">
+                <h4><i class="fas fa-info-circle"></i> Registration Information</h4>
+                <p>After registration, you'll complete a short onboarding to select your college, program, and year of study.</p>
+            </div>
+
+            <form onsubmit="handleRegister(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name <span class="required">*</span></label>
+                        <input type="text" id="firstName" placeholder="First name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name <span class="required">*</span></label>
+                        <input type="text" id="lastName" placeholder="Last name" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Registration Number <span class="required">*</span></label>
+                    <input type="text" id="regNumber" placeholder="e.g., 2200000000" required>
+                </div>
+
+                <div class="form-group">
+                    <label>UR Email Address <span class="required">*</span></label>
+                    <input type="email" id="email" placeholder="your.email@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone" placeholder="+250...">
+                </div>
+
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select id="gender">
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer-not">Prefer not to say</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>High School / Previous Institution</label>
+                    <input type="text" id="institution" placeholder="Name of your previous school">
+                </div>
+
+                <div class="terms">
+                    By registering, you agree to our <a>Terms of Service</a> and <a>Privacy Policy</a>.
+                </div>
+
+                <button type="submit" class="btn btn-primary register-btn">
+                    <i class="fas fa-user-plus"></i> Complete Registration
+                </button>
+            </form>
+
+            <div class="divider"><span>or</span></div>
+
+            <p class="login-link">
+                Already have an account? <a onclick="goToLogin()">Sign in</a>
+            </p>
+
+            <div class="back-link" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back to home
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showAlert(type, message) {
+            const alert = document.getElementById('alertBox');
+            alert.className = `alert ${type} show`;
+            alert.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}`;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const regNumber = document.getElementById('regNumber').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const gender = document.getElementById('gender').value;
+            const institution = document.getElementById('institution').value.trim();
+
+            // Validation
+            if (!firstName || !lastName || !regNumber || !email) {
+                showAlert('error', 'Please fill in all required fields');
+                return;
+            }
+
+            if (!email.includes('@') || !email.includes('.')) {
+                showAlert('error', 'Please enter a valid email address');
+                return;
+            }
+
+            if (regNumber.length < 5) {
+                showAlert('error', 'Please enter a valid registration number');
+                return;
+            }
+
+            // Create user object
+            const user = {
+                id: Date.now().toString(),
+                name: `${firstName} ${lastName}`,
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                regNumber: regNumber,
+                phone: phone,
+                gender: gender,
+                institution: institution,
+                onboardingComplete: false,
+                createdAt: new Date().toISOString()
+            };
+
+            // Save to localStorage
+            localStorage.setItem('ur_current_user', JSON.stringify(user));
+
+            showAlert('success', 'Registration successful! Redirecting to setup...');
+
+            setTimeout(() => {
+                window.location.href = '/onboarding';
+            }, 1500);
+        }
+
+        function goToLogin() {
+            window.location.href = '/login';
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if already logged in
+            const user = JSON.parse(localStorage.getItem('ur_current_user') || '{}');
+            
+            if (user.onboardingComplete) {
+                window.location.href = '/my-dashboard';
+            }
+        });
+    </script>
+</body>
+</html>

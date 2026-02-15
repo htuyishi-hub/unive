@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=
+    <title>Profile Settings - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--header-bg);
+            padding: 0.85rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-nav a:hover, .header-nav a.active {
+            color: var(--accent);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 70px;
+            height: fit-content;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .profile-photo {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+
+        .photo-edit-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 28px;
+            height: 28px;
+            background: var(--header-bg);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 0.75rem;
+        }
+
+        .profile-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-email {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1rem;
+        }
+
+        .profile-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 0.35rem 0.75rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .nav-menu {
+            background: var(--header-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.9rem 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-item.active {
+            background: rgba(198, 153, 60, 0.08);
+            border-left-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .section-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: var(--accent);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-input {
+            padding: 0.75rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(198, 153, 60, 0.1);
+        }
+
+        .form-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .form-input.readonly {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px -5px rgba(198, 153, 60, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+
+        .toggle-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .toggle-group:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .toggle-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border);
+            border-radius: 9999px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        .select-group {
+            position: relative;
+        }
+
+        .select-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        .select-group::after {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .alert {
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+        }
+
+        .alert.warning {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--warning);
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        .academic-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 10px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-item .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 0.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-item .value {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--accent);
+        }
+
+        .danger-zone {
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .danger-zone h4 {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .danger-zone p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                position: static;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+            .academic-summary {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            .academic-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1 onclick="window.location.href='/my-dashboard'">
+            <i class="fas fa-university"></i> UR Open Courseware
+        </h1>
+        <nav class="header-nav">
+            <a href="/my-dashboard" onclick="navigateTo('dashboard')">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="/my-courses" onclick="navigateTo('courses')">
+                <i class="fas fa-book"></i> My Courses
+            </a>
+            <a href="/my-profile" class="active" onclick="navigateTo('profile')">
+                <i class="fas fa-user"></i> Profile
+            </a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="profile-header">
+                <div class="profile-photo" id="profilePhoto">
+                    <i class="fas fa-user"></i>
+                    <div class="photo-edit-btn" onclick="changePhoto()">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <h2 class="profile-name" id="profileName">Loading...</h2>
+                <p class="profile-email" id="profileEmail">...</p>
+                <div class="profile-badges">
+                    <div class="badge"><i class="fas fa-graduation-cap"></i> <span id="badgeProgram">Loading...</span></div>
+                    <div class="badge"><i class="fas fa-calendar"></i> Year <span id="badgeYear">-</span></div>
+                </div>
+            </div>
+
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="showSection('personal')">
+                    <i class="fas fa-user"></i> Personal Info
+                </div>
+                <div class="nav-item" onclick="showSection('academic')">
+                    <i class="fas fa-graduation-cap"></i> Academic Details
+                </div>
+                <div class="nav-item" onclick="showSection('preferences')">
+                    <i class="fas fa-sliders-h"></i> Preferences
+                </div>
+                <div class="nav-item" onclick="showSection('notifications')">
+                    <i class="fas fa-bell"></i> Notifications
+                </div>
+                <div class="nav-item" onclick="showSection('security')">
+                    <i class="fas fa-shield-alt"></i> Security
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div id="alertBox" class="alert">
+                <i class="fas fa-check-circle"></i>
+                <span id="alertText">Changes saved successfully!</span>
+            </div>
+
+            <div class="section-card" id="personalSection">
+                <h3 class="section-title"><i class="fas fa-user"></i> Personal Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="fullName" placeholder="Your full name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input readonly" id="email" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Registration Number</label>
+                        <input type="text" class="form-input readonly" id="regNumber" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="phone" placeholder="+250...">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-input" id="address" placeholder="Your address">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="savePersonal()">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <button class="btn btn-outline" onclick="resetPersonal()">
+                        <i class="fas fa-undo"></i> Cancel
+                    </button>
+                </div>
+            </div>
+
+            <div class="section-card" id="academicSection" style="display:none;">
+                <h3 class="section-title"><i class="fas fa-graduation-cap"></i> Academic Details</h3>
+                <div class="academic-summary">
+                    <div class="summary-item">
+                        <div class="label">College</div>
+                        <div class="value" id="summaryCollege">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">Program</div>
+                        <div class="value" id="summaryProgram">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">Academic Year</div>
+                        <div class="value" id="summaryYear">-</div>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">College</label>
+                        <div class="select-group">
+                            <select id="editCollege" onchange="updatePrograms()">
+                                <option value="">Select College</option>
+                                <option value="cass">College of Arts and Social Sciences</option>
+                                <option value="cbe">College of Business and Economics</option>
+                                <option value="cmhs">College of Medicine and Health Sciences</option>
+                                <option value="cst">College of Science and Technology</option>
+                                <option value="caff">College of Agriculture and Food Sciences</option>
+                                <option value="ce">College of Education</option>
+                                <option value="cvas">College of Veterinary and Animal Sciences</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Program</label>
+                        <div class="select-group">
+                            <select id="editProgram">
+                                <option value="">Select Program</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Year of Study</label>
+                        <div class="select-group">
+                            <select id="editYear">
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                                <option value="5">Year 5</option>
+                                <option value="6">Year 6</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Academic Year</label>
+                        <div class="select-group">
+                            <select id="editAcademicYear">
+                                <option value="2024-2025">2024-2025</option>
+                                <option value="2025-2026">2025-2026</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="saveAcademic()">
+                        <i class="fas fa-save"></i> Update Academic Info
+                    </button>
+                </div>
+                <div class="danger-zone">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Reset Onboarding</h4>
+                    <p>Need to change all your academic selections? You can restart the onboarding process.</p>
+                    <button class="btn btn-danger" onclick="resetOnboarding()">
+                        <i class="fas fa-redo"></i> Restart Onboarding
+                    </button>
+                </div>
+            </div>
+
+            <div class="section-card" id="preferencesSection" style="display:none;">
+                <h3 class="section-title"><i class="fas fa-sliders-h"></i> Reading Preferences</h3>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Dark Mode</h4>
+                        <p>Use dark theme for comfortable night reading</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkMode" checked onchange="savePreference('darkMode', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Reading Mode</h4>
+                        <p>Distraction-free mode for focused reading</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="readingMode" onchange="savePreference('readingMode', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Auto-save Highlights</h4>
+                        <p>Automatically save your highlights and notes</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoSave" checked onchange="savePreference('autoSave', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Large Text Mode</h4>
+                        <p>Increase text size for better readability</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="largeText" onchange="savePreference('largeText', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="section-card" id="notificationsSection" style="display:none;">
+                <h3 class="section-title"><i class="fas fa-bell"></i> Notification Settings</h3>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>New Module Alerts</h4>
+                        <p>Get notified when new modules are uploaded</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="newModuleAlert" checked onchange="savePreference('newModuleAlert', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Assignment Reminders</h4>
+                        <p>Receive reminders about upcoming assignments</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="assignmentAlert" checked onchange="savePreference('assignmentAlert', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Announcements</h4>
+                        <p>Get notified about important announcements</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="announcementAlert" checked onchange="savePreference('announcementAlert', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Email Notifications</h4>
+                        <p>Receive notifications via email</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="emailNotifications" onchange="savePreference('emailNotifications', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="section-card" id="securitySection" style="display:none;">
+                <h3 class="section-title"><i class="fas fa-shield-alt"></i> Security</h3>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-input" id="currentPassword" placeholder="Enter current password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-input" id="newPassword" placeholder="Enter new password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm new password">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="changePassword()">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const programs = {
+            'cst': [
+                { code: 'BH8COE', name: 'Computer Engineering', duration: 4 },
+                { code: 'BH8CSC', name: 'Computer Science', duration: 4 },
+                { code: 'BH8ISY', name: 'Information Systems', duration: 4 },
+                { code: 'BH8ITE', name: 'Information Technology', duration: 4 },
+                { code: 'BH8GEO', name: 'Applied Geology', duration: 4 },
+                { code: 'BH8ANC', name: 'Analytical Chemistry', duration: 4 },
+                { code: 'BH8APM', name: 'Applied Mathematics', duration: 4 },
+                { code: 'BH8APH', name: 'Applied Physics', duration: 4 },
+                { code: 'BH8BBC', name: 'Biochemistry', duration: 4 },
+                { code: 'BH8BIO', name: 'Biotechnology', duration: 4 },
+                { code: 'BH8COB', name: 'Conservation Biology', duration: 4 },
+                { code: 'BH8NST', name: 'Nuclear Science', duration: 4 },
+                { code: 'BH8OCH', name: 'Organic Chemistry', duration: 4 },
+                { code: 'BH8STA', name: 'Statistics', duration: 4 }
+            ],
+            'cass': [
+                { code: 'BH8LLB', name: 'Bachelor of Law', duration: 4 },
+                { code: 'BH8JCO', name: 'Journalism', duration: 4 },
+                { code: 'BH8SOC', name: 'Sociology', duration: 4 },
+                { code: 'BH8ANT', name: 'Anthropology', duration: 4 },
+                { code: 'BH8HIS', name: 'History', duration: 4 },
+                { code: 'BH8ECO', name: 'Economics', duration: 4 },
+                { code: 'BH8PSY', name: 'Psychology', duration: 4 }
+            ],
+            'cbe': [
+                { code: 'BH8BBA', name: 'Business Administration', duration: 4 },
+                { code: 'BH8ACC', name: 'Accounting', duration: 4 },
+                { code: 'BH8FIN', name: 'Finance', duration: 4 },
+                { code: 'BH8MGT', name: 'Management', duration: 4 },
+                { code: 'BH8MKT', name: 'Marketing', duration: 4 }
+            ],
+            'caff': [
+                { code: 'BH8AGR', name: 'Agriculture', duration: 4 },
+                { code: 'BH8FST', name: 'Food Science', duration: 4 },
+                { code: 'BH8AGE', name: 'Agricultural Engineering', duration: 4 }
+            ],
+            'cmhs': [
+                { code: 'BH8MED', name: 'Medicine', duration: 6 },
+                { code: 'BH8NUR', name: 'Nursing', duration: 4 },
+                { code: 'BH8PHA', name: 'Pharmacy', duration: 5 },
+                { code: 'BH8MLS', name: 'Medical Laboratory', duration: 4 },
+                { code: 'BH8SPH', name: 'Public Health', duration: 4 }
+            ],
+            'ce': [
+                { code: 'BH8EDU', name: 'Education', duration: 4 },
+                { code: 'BH8SNE', name: 'Special Needs Education', duration: 4 },
+                { code: 'BH8ECE', name: 'Early Childhood Education', duration: 4 }
+            ],
+            'cvas': [
+                { code: 'BH8VET', name: 'Veterinary Medicine', duration: 6 },
+                { code: 'BH8ANS', name: 'Animal Science', duration: 4 },
+                { code: 'BH8VMT', name: 'Veterinary Laboratory', duration: 4 }
+            ]
+        };
+
+        const collegeNames = {
+            'cass': 'College of Arts and Social Sciences',
+            'cbe': 'College of Business and Economics',
+            'cmhs': 'College of Medicine and Health Sciences',
+            'cst': 'College of Science and Technology',
+            'caff': 'College of Agriculture and Food Sciences',
+            'ce': 'College of Education',
+            'cvas': 'College of Veterinary and Animal Sciences'
+        };
+
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadPreferences();
+        });
+
+        function loadUserData() {
+            currentUser = JSON.parse(localStorage.getItem('ur_current_user') || '{}');
+            
+            if (!currentUser.onboardingComplete) {
+                window.location.href = '/onboarding';
+                return;
+            }
+
+            document.getElementById('profileName').textContent = currentUser.name || 'Student';
+            document.getElementById('profileEmail').textContent = currentUser.email || 'student@ur.ac.rw';
+            document.getElementById('fullName').value = currentUser.name || '';
+            document.getElementById('email').value = currentUser.email || '';
+            document.getElementById('regNumber').value = currentUser.regNumber || currentUser.email?.split('@')[0] || '';
+            document.getElementById('phone').value = currentUser.phone || '';
+            document.getElementById('address').value = currentUser.address || '';
+
+            document.getElementById('badgeProgram').textContent = currentUser.programCode || 'N/A';
+            document.getElementById('badgeYear').textContent = currentUser.year || '-';
+
+            document.getElementById('summaryCollege').textContent = collegeNames[currentUser.college] || '-';
+            document.getElementById('summaryProgram').textContent = `${currentUser.programCode || ''} - ${currentUser.program || ''}`;
+            document.getElementById('summaryYear').textContent = currentUser.academicYear || '-';
+
+            document.getElementById('editCollege').value = currentUser.college || '';
+            document.getElementById('editYear').value = currentUser.year || 1;
+            document.getElementById('editAcademicYear').value = currentUser.academicYear || '2024-2025';
+
+            updatePrograms();
+        }
+
+        function updatePrograms() {
+            const college = document.getElementById('editCollege').value;
+            const programSelect = document.getElementById('editProgram');
+            programSelect.innerHTML = '<option value="">Select Program</option>';
+            
+            if (college && programs[college]) {
+                programs[college].forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.code;
+                    option.textContent = `${p.code} - ${p.name}`;
+                    if (p.code === currentUser.programCode) option.selected = true;
+                    programSelect.appendChild(option);
+                });
+            }
+        }
+
+        function showSection(section) {
+            document.querySelectorAll('.section-card').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(`${section}Section`).style.display = 'block';
+            document.querySelector(`.nav-item[onclick*="${section}"]`).classList.add('active');
+        }
+
+        function savePersonal() {
+            const user = { ...currentUser };
+            user.name = document.getElementById('fullName').value;
+            user.phone = document.getElementById('phone').value;
+            user.address = document.getElementById('address').value;
+            
+            localStorage.setItem('ur_current_user', JSON.stringify(user));
+            currentUser = user;
+            
+            showAlert('success', 'Personal information saved successfully!');
+        }
+
+        function resetPersonal() {
+            document.getElementById('fullName').value = currentUser.name || '';
+            document.getElementById('phone').value = currentUser.phone || '';
+            document.getElementById('address').value = currentUser.address || '';
+        }
+
+        function saveAcademic() {
+            const college = document.getElementById('editCollege').value;
+            const programSelect = document.getElementById('editProgram').value;
+            const year = document.getElementById('editYear').value;
+            const academicYear = document.getElementById('editAcademicYear').value;
+
+            if (!college || !programSelect) {
+                showAlert('warning', 'Please select both college and program');
+                return;
+            }
+
+            const programInfo = programs[college]?.find(p => p.code === programSelect);
+
+            const user = { ...currentUser };
+            user.college = college;
+            user.collegeName = collegeNames[college];
+            user.programCode = programSelect;
+            user.program = programInfo?.name || '';
+            user.year = parseInt(year);
+            user.academicYear = academicYear;
+            
+            localStorage.setItem('ur_current_user', JSON.stringify(user));
+            currentUser = user;
+
+            loadUserData();
+            showAlert('success', 'Academic information updated successfully!');
+        }
+
+        function resetOnboarding() {
+            if (confirm('Are you sure you want to restart the onboarding process? Your current selections will be lost.')) {
+                const user = { ...currentUser };
+                user.onboardingComplete = false;
+                localStorage.setItem('ur_current_user', JSON.stringify(user));
+                window.location.href = '/onboarding';
+            }
+        }
+
+        function loadPreferences() {
+            const prefs = JSON.parse(localStorage.getItem('ur_preferences') || '{}');
+            document.getElementById('darkMode').checked = prefs.darkMode !== false;
+            document.getElementById('readingMode').checked = prefs.readingMode || false;
+            document.getElementById('autoSave').checked = prefs.autoSave !== false;
+            document.getElementById('largeText').checked = prefs.largeText || false;
+            document.getElementById('newModuleAlert').checked = prefs.newModuleAlert !== false;
+            document.getElementById('assignmentAlert').checked = prefs.assignmentAlert !== false;
+            document.getElementById('announcementAlert').checked = prefs.announcementAlert !== false;
+            document.getElementById('emailNotifications').checked = prefs.emailNotifications || false;
+        }
+
+        function savePreference(key, value) {
+            const prefs = JSON.parse(localStorage.getItem('ur_preferences') || '{}');
+            prefs[key] = value;
+            localStorage.setItem('ur_preferences', JSON.stringify(prefs));
+        }
+
+        function changePassword() {
+            const current = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+
+            if (!current || !newPass || !confirm) {
+                showAlert('warning', 'Please fill in all password fields');
+                return;
+            }
+
+            if (newPass !== confirm) {
+                showAlert('warning', 'New passwords do not match');
+                return;
+            }
+
+            if (newPass.length < 8) {
+                showAlert('warning', 'Password must be at least 8 characters');
+                return;
+            }
+
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            showAlert('success', 'Password changed successfully!');
+        }
+
+        function changePhoto() {
+            alert('Photo upload feature - implement file input');
+        }
+
+        function showAlert(type, text) {
+            const alert = document.getElementById('alertBox');
+            const alertText = document.getElementById('alertText');
+            alert.className = `alert ${type} show`;
+            alertText.textContent = text;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 3000);
+        }
+
+        function navigateTo(page) {
+            if (page === 'dashboard') window.location.href = '/my-dashboard';
+            else if (page === 'courses') window.location.href = '/my-courses';
+        }
+    </script>
+</body>
+</html>

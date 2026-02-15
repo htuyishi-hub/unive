@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>University of Rwanda - Course Management</title>
+    <title>UR Open Courseware - University of Rwanda</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
             --bg: #0f172a;
             --header-bg: #1e293b;
             --card-bg: rgba(30, 41, 59, 0.7);
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --success: #10b981;
-            --danger: #ef4444;
             --border: rgba(255, 255, 255, 0.1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background: var(--bg);
             color: var(--text-main);
             min-height: 100vh;
@@ -29,7 +35,7 @@
 
         .header {
             background: var(--header-bg);
-            padding: 1.5rem 2rem;
+            padding: 1rem 2rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -39,233 +45,340 @@
             z-index: 100;
         }
 
-        .header h1 {
-            font-size: 1.5rem;
-            background: linear-gradient(to right, #60a5fa, #3b82f6);
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .logo h1 {
+            font-size: 1.25rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            cursor: pointer;
         }
 
         .nav-links {
             display: flex;
-            gap: 1.5rem;
+            gap: 2rem;
             align-items: center;
         }
 
         .nav-links a {
             color: var(--text-muted);
             text-decoration: none;
-            transition: color 0.2s;
+            font-size: 0.9rem;
             cursor: pointer;
+            transition: color 0.2s;
         }
 
-        .nav-links a:hover { color: var(--accent); }
+        .nav-links a:hover {
+            color: var(--accent);
+        }
 
-        .user-menu {
+        .hero {
+            padding: 5rem 2rem;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero h2 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero h2 span {
+            background: linear-gradient(to right, var(--accent), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+
+        .hero-buttons {
             display: flex;
-            align-items: center;
             gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         .btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 0.5rem;
-            border: none;
+            padding: 0.9rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            text-decoration: none;
         }
 
         .btn-primary {
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
             color: white;
         }
 
-        .btn-primary:hover { background: var(--accent-hover); }
-        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px -8px rgba(198, 153, 60, 0.4);
+        }
+
         .btn-outline {
             background: transparent;
-            border: 1px solid var(--border);
+            border: 2px solid var(--border);
             color: var(--text-main);
         }
 
-        .container {
-            max-width: 1400px;
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .features {
+            padding: 4rem 2rem;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
         }
 
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
+        .features h3 {
+            text-align: center;
+            font-size: 1.75rem;
+            margin-bottom: 3rem;
         }
 
-        .breadcrumb span {
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .breadcrumb span:hover { color: var(--accent); }
-        .breadcrumb .current { color: var(--text-main); cursor: default; }
-
-        .grid {
+        .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1.5rem;
         }
 
-        .card {
-            background: var(--card-bg);
+        .feature-card {
+            background: var(--header-bg);
+            border-radius: 16px;
+            padding: 2rem;
             border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            transition: all 0.3s;
-            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent);
-            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-light);
         }
 
-        .card-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 0.75rem;
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
 
-        .card h3 {
-            font-size: 1.1rem;
+        .feature-card h4 {
+            font-size: 1.15rem;
             margin-bottom: 0.5rem;
         }
 
-        .card p {
+        .feature-card p {
             color: var(--text-muted);
             font-size: 0.9rem;
+            line-height: 1.6;
         }
 
-        .card-badge {
-            display: inline-block;
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--accent);
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-top: 1rem;
+        .colleges-section {
+            padding: 4rem 2rem;
+            background: var(--header-bg);
         }
 
-        .stats-grid {
+        .colleges-section h3 {
+            text-align: center;
+            font-size: 1.75rem;
+            margin-bottom: 3rem;
+        }
+
+        .colleges-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
-            margin-bottom: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
-        .stat-card {
+        .college-card {
             background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.5rem;
+            border-radius: 12px;
+            padding: 1.25rem;
             text-align: center;
-        }
-
-        .stat-card h2 {
-            font-size: 2rem;
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-
-        .module-card {
-            background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .module-card:hover {
+        .college-card:hover {
             border-color: var(--accent);
+            background: rgba(198, 153, 60, 0.08);
         }
 
-        .module-info h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
+        .college-card i {
+            font-size: 1.75rem;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
         }
 
-        .module-meta {
-            display: flex;
-            gap: 1rem;
+        .college-card h5 {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .college-card span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .footer {
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer p {
             color: var(--text-muted);
             font-size: 0.85rem;
         }
-
-        .tag {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--accent);
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
+        
+        .footer p.copyright {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .footer p.copyright:hover {
+            opacity: 0.7;
         }
 
-        .modal-overlay {
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        .login-modal {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
+            z-index: 200;
             align-items: center;
-            z-index: 1000;
+            justify-content: center;
         }
 
-        .modal-overlay.active { display: flex; }
+        .login-modal.show {
+            display: flex;
+        }
 
-        .modal {
+        .modal-content {
             background: var(--header-bg);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 2rem;
-            max-width: 450px;
-            width: 90%;
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            animation: modalIn 0.3s ease;
         }
 
-        .modal h2 { margin-bottom: 0.5rem; }
-        .modal-subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-        .form-group { margin-bottom: 1rem; }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        .modal-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .modal-content > p {
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
 
         .form-group label {
             display: block;
+            font-size: 0.85rem;
             margin-bottom: 0.5rem;
             color: var(--text-muted);
-            font-size: 0.9rem;
         }
 
         .form-group input {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.85rem 1rem;
             background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 0.5rem;
+            border-radius: 8px;
             color: var(--text-main);
+            font-size: 0.95rem;
         }
 
         .form-group input:focus {
@@ -273,726 +386,306 @@
             border-color: var(--accent);
         }
 
-        .magic-info {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
+        .login-btn {
+            width: 100%;
+            padding: 0.9rem;
+            margin-top: 0.5rem;
         }
 
-        .verification-screen {
+        .login-hint {
             text-align: center;
-            padding: 2rem;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
         }
 
-        .verification-icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            font-size: 2.5rem;
-        }
-
-        .notification {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--accent);
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            display: none;
-            z-index: 2000;
-        }
-
-        .notification.show { display: block; }
-        .notification.error { background: var(--danger); }
-        .notification.success { background: var(--success); }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 2rem auto;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .login-hint a {
+            color: var(--accent);
+            cursor: pointer;
         }
 
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
                 gap: 1rem;
-                text-align: center;
             }
-            .grid { grid-template-columns: 1fr; }
+            .hero h2 {
+                font-size: 2rem;
+            }
+            .nav-links {
+                gap: 1rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Login Modal -->
-    <div class="modal-overlay" id="login-modal">
-        <div class="modal">
-            <h2 id="login-title">Welcome Back</h2>
-            <p class="modal-subtitle" id="login-subtitle">Enter your email to receive a login link</p>
-            
-            <form id="magic-form">
-                <div class="magic-info">
-                    <strong>🔐 Magic Link Login</strong><br>
-                    Enter your email and we'll send you a secure, one-time login link.
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-university"></i></div>
+            <h1>UR Open Courseware</h1>
+        </div>
+        <nav class="nav-links">
+            <a onclick="showLoginModal()">Sign In</a>
+            <a onclick="showLoginModal()" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">Get Started</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h2>Your Gateway to <span>Academic Excellence</span></h2>
+        <p>Access comprehensive learning materials, lecture notes, and study resources from the University of Rwanda. Streamlined for your academic journey.</p>
+        <div class="hero-buttons">
+            <button class="btn btn-primary" onclick="showLoginModal()">
+                <i class="fas fa-sign-in-alt"></i> Student Login
+            </button>
+            <button class="btn btn-outline" onclick="showLoginModal()">
+                <i class="fas fa-user-plus"></i> Register
+            </button>
+        </div>
+    </section>
+
+    <section class="features">
+        <h3>Why Use UR Open Courseware?</h3>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-book-open"></i></div>
+                <h4>Personalized Learning</h4>
+                <p>Customized dashboard showing only courses relevant to your program and year of study.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-search"></i></div>
+                <h4>Powerful Search</h4>
+                <p>Find exactly what you need with full-text search across all your course materials.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-file-pdf"></i></div>
+                <h4>Smart Reader</h4>
+                <p>Built-in document reader with highlighting, annotations, and cross-reference navigation.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                <h4>Study Anywhere</h4>
+                <p>Access your materials on any device, anytime. Download for offline reading.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                <h4>Smart Notifications</h4>
+                <p>Get alerts when new modules are uploaded to your courses.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-graduation-cap"></i></div>
+                <h4>Progress Tracking</h4>
+                <p>Track your learning progress with detailed statistics and completion indicators.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="colleges-section">
+        <h3>Explore Our Colleges</h3>
+        <div class="colleges-grid">
+            <div class="college-card">
+                <i class="fas fa-users"></i>
+                <h5>Arts & Social Sciences</h5>
+                <span>7 Programs</span>
+            </div>
+            <div class="college-card">
+                <i class="fas fa-briefcase"></i>
+                <h5>Business & Economics</h5>
+                <span>5 Programs</span>
+            </div>
+            <div class="college-card">
+                <i class="fas fa-flask"></i>
+                <h5>Science & Technology</h5>
+                <span>14 Programs</span>
+            </div>
+            <div class="college-card">
+                <i class="fas fa-user-md"></i>
+                <h5>Medicine & Health</h5>
+                <span>5 Programs</span>
+            </div>
+            <div class="college-card">
+                <i class="fas fa-seedling"></i>
+                <h5>Agriculture & Food</h5>
+                <span>3 Programs</span>
+            </div>
+            <div class="college-card">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h5>Education</h5>
+                <span>3 Programs</span>
+            </div>
+            <div class="college-card">
+                <i class="fas fa-paw"></i>
+                <h5>Veterinary & Animal</h5>
+                <span>3 Programs</span>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a>About</a>
+            <a>Help Center</a>
+            <a>Contact</a>
+            <a>Privacy Policy</a>
+        </div>
+        <p class="copyright" onclick="handleCopyrightClick(this)">&copy; 2024 University of Rwanda. All rights reserved.</p>
+    </footer>
+
+    <div class="login-modal" id="loginModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="hideLoginModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h3><i class="fas fa-university" style="color: var(--accent);"></i> UR Open Courseware</h3>
+            <p>Sign in with your University of Rwanda credentials</p>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Registration Number</label>
+                    <input type="text" id="loginRegNumber" placeholder="e.g., 2200000000" required>
                 </div>
-                
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" id="magic-email" required placeholder="student@ur.ac.rw">
+                    <input type="email" id="loginEmail" placeholder="your.email@example.com" required>
                 </div>
-                
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    Send Login Link
+                <button type="submit" class="btn btn-primary login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
                 </button>
             </form>
-            
-            <div id="verification-screen" class="verification-screen" style="display: none;">
-                <div class="verification-icon">📧</div>
-                <h3>Check Your Email!</h3>
-                <p style="color: var(--text-muted); margin-bottom: 1rem;">
-                    We've sent a login link to <strong id="sent-to"></strong>
-                </p>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
-                    Click the link in the email to access your dashboard.
-                </p>
-                <button class="btn btn-outline" onclick="showLoginForm()">
-                    ← Back to Login
-                </button>
-                <br><br>
-                <button class="btn btn-outline btn-sm" onclick="resendMagicLink()">
-                    Resend Link
-                </button>
-            </div>
-            
-            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center;">
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-                    Are you an administrator?
-                </p>
-                <a href="/admin" class="btn btn-outline" style="text-decoration: none;">
-                    🔐 Go to Admin Portal
-                </a>
-            </div>
+            <p class="login-hint">
+                New student? <a onclick="showRegistrationModal()">Complete registration</a>
+            </p>
         </div>
     </div>
 
-    <header class="header">
-        <h1 onclick="goHome()">🎓 UR Course Management</h1>
-        <nav class="nav-links">
-            <a onclick="goHome()">Browse</a>
-            <a onclick="showMyCourses()">My Courses</a>
-            <a onclick="showAvailableCourses()">Available</a>
-            <a href="/dashboard" id="nav-dashboard" style="display: none;">📊 Dashboard</a>
-            <a href="/admin-access" id="nav-admin-portal" style="display: none;">⚙️ Admin Portal</a>
-        </nav>
-        <div class="user-menu">
-            <div id="user-info" style="display: none;">
-                <span id="user-name"></span>
-                <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
-            </div>
-            <button class="btn btn-primary btn-sm" id="login-btn" onclick="openLoginModal()">Sign In</button>
+    <!-- Hidden Admin Login Modal -->
+    <div class="login-modal" id="adminLoginModal" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close" onclick="hideAdminLoginModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h3><i class="fas fa-shield-alt" style="color: var(--danger);"></i> Admin Portal</h3>
+            <p>Restricted access authorized personnel only</p>
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="form-group">
+                    <label>Admin Email</label>
+                    <input type="email" id="adminEmail" placeholder="admin@ur.ac.rw" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+                </div>
+                <p id="adminLoginError" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 0.5rem; display: none;"></p>
+                <button type="submit" class="btn btn-primary login-btn" style="background: var(--danger);">
+                    <i class="fas fa-sign-in-alt"></i> Admin Login
+                </button>
+            </form>
         </div>
-    </header>
-
-    <main class="container">
-        <div class="breadcrumb" id="breadcrumb">
-            <span onclick="goHome()">Home</span>
-        </div>
-        <div id="content"></div>
-    </main>
-    
-    <footer style="text-align: center; padding: 1.5rem; color: #64748b; font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-        <a href="/admin-login" style="color: #64748b; text-decoration: none;">Admin Portal</a>
-    </footer>
-
-    <div class="notification" id="notification"></div>
+    </div>
 
     <script>
-        let authToken = localStorage.getItem('ur_access_token');
-        let currentUser = JSON.parse(localStorage.getItem('ur_user') || 'null');
-        let userEmail = localStorage.getItem('ur_user_email') || '';
-        const API_PREFIX = '/api';
-
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            loadColleges();
-            checkUrlForToken();
-        });
-
-        function checkUrlForToken() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-            
-            if (token) {
-                window.history.replaceState({}, document.title, window.location.pathname);
-                authToken = token;
-                localStorage.setItem('ur_access_token', token);
-                fetchUserInfo();
+        let copyrightClickCount = 0;
+        
+        function handleCopyrightClick(element) {
+            copyrightClickCount++;
+            if (copyrightClickCount === 4) {
+                showAdminLoginModal();
+                copyrightClickCount = 0;
             }
+            // Reset count after 2 seconds of no clicks
+            setTimeout(() => {
+                copyrightClickCount = 0;
+            }, 2000);
         }
-
-        function checkAuth() {
-            const userInfo = document.getElementById('user-info');
-            const loginBtn = document.getElementById('login-btn');
-            const dashboardLink = document.getElementById('nav-dashboard');
-            const adminPortalLink = document.getElementById('nav-admin-portal');
-            
-            // Check for admin token
-            const adminToken = localStorage.getItem('ur_admin_token');
-            const adminUser = localStorage.getItem('ur_admin_user');
-            
-            if (adminToken && adminUser) {
-                // Admin is logged in
-                const admin = JSON.parse(adminUser);
-                userInfo.style.display = 'flex';
-                loginBtn.style.display = 'none';
-                dashboardLink.style.display = 'block';
-                adminPortalLink.style.display = 'block';
-                document.getElementById('user-name').textContent = admin.name + ' (Admin)';
-            } else if (authToken && currentUser) {
-                // Regular student is logged in
-                userInfo.style.display = 'flex';
-                loginBtn.style.display = 'none';
-                dashboardLink.style.display = 'block';
-                adminPortalLink.style.display = 'none';
-                document.getElementById('user-name').textContent = currentUser.name;
-            } else {
-                // No one is logged in
-                userInfo.style.display = 'none';
-                loginBtn.style.display = 'block';
-                dashboardLink.style.display = 'none';
-                adminPortalLink.style.display = 'none';
-            }
+        
+        function showAdminLoginModal() {
+            document.getElementById('adminLoginModal').style.display = 'flex';
+            document.getElementById('adminLoginModal').classList.add('show');
         }
-
-        async function fetchUserInfo() {
-            try {
-                const response = await fetch('/auth/me', {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    currentUser = data.user;
-                    localStorage.setItem('ur_user', JSON.stringify(currentUser));
-                    checkAuth();
-                    goHome();
-                    showNotification('Welcome back, ' + currentUser.name + '!', 'success');
-                } else {
-                    logout();
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
+        
+        function hideAdminLoginModal() {
+            document.getElementById('adminLoginModal').style.display = 'none';
+            document.getElementById('adminLoginModal').classList.remove('show');
+            document.getElementById('adminLoginError').style.display = 'none';
         }
-
-        function openLoginModal() {
-            document.getElementById('login-modal').classList.add('active');
-            showLoginForm();
-        }
-
-        function closeLoginModal() {
-            document.getElementById('login-modal').classList.remove('active');
-        }
-
-        function showLoginForm() {
-            document.getElementById('magic-form').style.display = 'block';
-            document.getElementById('verification-screen').style.display = 'none';
-            document.getElementById('login-title').textContent = 'Welcome Back';
-            document.getElementById('login-subtitle').textContent = 'Enter your email to receive a login link';
-        }
-
-        function showVerificationScreen(email) {
-            document.getElementById('magic-form').style.display = 'none';
-            document.getElementById('verification-screen').style.display = 'block';
-            document.getElementById('sent-to').textContent = email;
-            document.getElementById('login-title').textContent = 'Check Your Email';
-            document.getElementById('login-subtitle').textContent = '';
-        }
-
-        document.getElementById('magic-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('magic-email').value.trim().toLowerCase();
-            const btn = e.target.querySelector('button[type="submit"]');
-            
-            btn.disabled = true;
-            btn.textContent = 'Sending...';
+        
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('adminEmail').value.trim().toLowerCase();
+            const password = document.getElementById('adminPassword').value;
+            const errorEl = document.getElementById('adminLoginError');
             
             try {
-                const response = await fetch('/auth/login', {
+                const response = await fetch('/auth/admin-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ email, password })
                 });
                 
-                const result = await response.json();
+                const data = await response.json();
                 
-                if (response.ok) {
-                    userEmail = email;
-                    localStorage.setItem('ur_user_email', email);
-                    showVerificationScreen(email);
-                    console.log('Magic link sent to:', email);
+                if (response.ok && data.token) {
+                    localStorage.setItem('ur_admin_token', data.token);
+                    localStorage.setItem('ur_admin_user', JSON.stringify(data.user));
+                    hideAdminLoginModal();
+                    window.location.href = '/admin?token=' + data.token;
                 } else {
-                    showNotification(result.error || 'Failed to send magic link', 'error');
+                    errorEl.textContent = data.error || 'Login failed';
+                    errorEl.style.display = 'block';
                 }
-            } catch (error) {
-                showNotification('Connection error', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Send Login Link';
+            } catch (e) {
+                errorEl.textContent = 'Connection error';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('show');
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginModal').classList.remove('show');
+        }
+
+        function showRegistrationModal() {
+            window.location.href = '/register';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const regNumber = document.getElementById('loginRegNumber').value;
+            const email = document.getElementById('loginEmail').value;
+
+            if (!regNumber || !email) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (!email.includes('@') || !email.includes('.')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            const user = {
+                    name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    email: email,
+                    regNumber: regNumber,
+                    onboardingComplete: false
+                };
+                localStorage.setItem('ur_current_user', JSON.stringify(user));
+                window.location.href = '/onboarding';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(localStorage.getItem('ur_current_user') || '{}');
+            if (user.onboardingComplete) {
+                window.location.href = '/my-dashboard';
             }
         });
 
-        async function resendMagicLink() {
-            const email = localStorage.getItem('ur_user_email');
-            if (!email) { showLoginForm(); return; }
-            
-            try {
-                const response = await fetch('/auth/resend', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-                
-                if (response.ok) {
-                    showNotification('Magic link resent!', 'success');
-                } else {
-                    showNotification('Failed to resend link', 'error');
-                }
-            } catch (error) {
-                showNotification('Connection error', 'error');
+        document.getElementById('loginModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideLoginModal();
             }
-        }
-
-        function logout() {
-            authToken = null;
-            currentUser = null;
-            localStorage.removeItem('ur_access_token');
-            localStorage.removeItem('ur_user');
-            localStorage.removeItem('ur_user_email');
-            localStorage.removeItem('ur_admin_token');
-            localStorage.removeItem('ur_admin_user');
-            checkAuth();
-            goHome();
-            showNotification('Logged out successfully', 'success');
-        }
-
-        let navigationHistory = [];
-
-        function updateBreadcrumb(path) {
-            const breadcrumb = document.getElementById('breadcrumb');
-            let html = '<span onclick="goHome()">Home</span>';
-            
-            path.forEach((item, index) => {
-                if (index === path.length - 1) {
-                    html += ` → <span class="current">${item.name}</span>`;
-                } else {
-                    html += ` → <span onclick="${item.onclick}">${item.name}</span>`;
-                }
-            });
-            
-            breadcrumb.innerHTML = html;
-        }
-
-        function showLoading() {
-            document.getElementById('content').innerHTML = '<div class="spinner"></div>';
-        }
-
-        function goHome() {
-            navigationHistory = [];
-            updateBreadcrumb([]);
-            loadColleges();
-        }
-
-        async function apiFetch(endpoint, options = {}) {
-            const headers = {
-                'Content-Type': 'application/json',
-                ...options.headers
-            };
-            
-            if (authToken) {
-                headers['Authorization'] = `Bearer ${authToken}`;
-            }
-            
-            const response = await fetch(API_PREFIX + endpoint, {
-                ...options,
-                headers
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'API request failed');
-            }
-            
-            return data;
-        }
-
-        async function loadColleges() {
-            showLoading();
-            
-            try {
-                const data = await apiFetch('/colleges');
-                
-                document.getElementById('content').innerHTML = `
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <h2>${data.colleges?.length || 0}</h2>
-                            <p>Colleges</p>
-                        </div>
-                        <div class="stat-card">
-                            <h2>${data.colleges?.reduce((sum, c) => sum + (c.school_count || 0), 0)}</h2>
-                            <p>Schools</p>
-                        </div>
-                        <div class="stat-card">
-                            <h2>7</h2>
-                            <p>Academic Years</p>
-                        </div>
-                    </div>
-                    
-                    <h2 style="margin-bottom: 1.5rem;">Select a College</h2>
-                    
-                    <div class="grid">
-                        ${data.colleges?.map(college => `
-                            <div class="card" onclick="loadSchools(${college.id}, '${college.name}')">
-                                <div class="card-icon">🏛️</div>
-                                <h3>${college.code}</h3>
-                                <p>${college.name}</p>
-                                <span class="card-badge">${college.school_count} Schools</span>
-                            </div>
-                        `).join('') || '<p>No colleges found</p>'}
-                    </div>
-                `;
-            } catch (error) {
-                showNotification(error.message, 'error');
-                document.getElementById('content').innerHTML = '<p>Error loading colleges</p>';
-            }
-        }
-
-        async function loadSchools(collegeId, collegeName) {
-            showLoading();
-            navigationHistory = [{ name: collegeName, onclick: 'goHome()' }];
-            updateBreadcrumb(navigationHistory);
-            
-            try {
-                const collegeData = await apiFetch(`/colleges/${collegeId}`);
-                const schoolsData = await apiFetch(`/schools?college_id=${collegeId}`);
-                
-                document.getElementById('content').innerHTML = `
-                    <div style="margin-bottom: 2rem;">
-                        <h2 style="margin-bottom: 0.5rem;">${collegeData.college.name}</h2>
-                        <p style="color: var(--text-muted);">${collegeData.college.description || ''}</p>
-                    </div>
-                    
-                    <h3 style="margin-bottom: 1.5rem;">Select a School</h3>
-                    
-                    <div class="grid">
-                        ${schoolsData.schools?.map(school => `
-                            <div class="card" onclick="loadAcademicYears(${school.id}, '${school.name}')">
-                                <div class="card-icon">📚</div>
-                                <h3>${school.code}</h3>
-                                <p>${school.name}</p>
-                                <span class="card-badge">${school.module_count} Modules</span>
-                            </div>
-                        `).join('') || '<p>No schools found</p>'}
-                    </div>
-                `;
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        }
-
-        async function loadAcademicYears(schoolId, schoolName) {
-            showLoading();
-            navigationHistory.push({ name: schoolName, onclick: `loadSchools(${schoolId}, '${schoolName}')` });
-            updateBreadcrumb(navigationHistory);
-            
-            try {
-                const yearsData = await apiFetch('/academic-years');
-                
-                document.getElementById('content').innerHTML = `
-                    <div style="margin-bottom: 2rem;">
-                        <h2 style="margin-bottom: 0.5rem;">${schoolName}</h2>
-                        <p style="color: var(--text-muted);">Select an Academic Year</p>
-                    </div>
-                    
-                    <div class="grid">
-                        ${yearsData.academic_years?.map(year => `
-                            <div class="card" onclick="loadSemesters(${year.id}, '${year.year_code}', ${schoolId})">
-                                <div class="card-icon">📅</div>
-                                <h3>${year.year_code}</h3>
-                                <p>${year.name}</p>
-                                <span class="card-badge" style="background: ${year.is_active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.1)'}; color: ${year.is_active ? 'var(--success)' : 'var(--text-muted)'}">
-                                    ${year.is_active ? 'Active' : year.is_completed ? 'Completed' : 'Inactive'}
-                                </span>
-                            </div>
-                        `).join('') || '<p>No academic years found</p>'}
-                    </div>
-                `;
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        }
-
-        async function loadSemesters(yearId, yearCode, schoolId) {
-            showLoading();
-            navigationHistory.push({ name: yearCode, onclick: `loadSemesters(${yearId}, '${yearCode}', ${schoolId})` });
-            updateBreadcrumb(navigationHistory);
-            
-            try {
-                const yearData = await apiFetch(`/academic-years/${yearId}`);
-                
-                document.getElementById('content').innerHTML = `
-                    <div style="margin-bottom: 2rem;">
-                        <h2 style="margin-bottom: 0.5rem;">${yearCode}</h2>
-                        <p style="color: var(--text-muted);">Select a Semester</p>
-                    </div>
-                    
-                    <div class="grid">
-                        ${yearData.semesters?.map(semester => `
-                            <div class="card" onclick="loadModules(${semester.id}, '${semester.name}', ${yearId}, ${schoolId})">
-                                <div class="card-icon">📖</div>
-                                <h3>${semester.name}</h3>
-                                <p>${semester.code}</p>
-                            </div>
-                        `).join('') || '<p>No semesters found</p>'}
-                    </div>
-                `;
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        }
-
-        async function loadModules(semesterId, semesterName, yearId, schoolId) {
-            showLoading();
-            navigationHistory.push({ name: semesterName, onclick: `loadSemesters(${yearId}, '${navigationHistory[navigationHistory.length-1].name}', ${schoolId})` });
-            updateBreadcrumb(navigationHistory);
-            
-            try {
-                const modulesData = await apiFetch(`/modules?semester_id=${semesterId}`);
-                
-                document.getElementById('content').innerHTML = `
-                    <div style="margin-bottom: 2rem;">
-                        <h2 style="margin-bottom: 0.5rem;">${semesterName}</h2>
-                        <p style="color: var(--text-muted);">Available Modules</p>
-                    </div>
-                    
-                    <input type="text" id="module-search" placeholder="Search modules..." 
-                           style="width: 100%; max-width: 400px; padding: 0.75rem 1rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.5rem; color: var(--text-main); margin-bottom: 1.5rem;"
-                           oninput="filterModules(this.value)">
-                    
-                    <div class="modules-list" id="modules-list">
-                        ${modulesData.modules?.length === 0 ? '<p style="color: var(--text-muted);">No modules available</p>' : ''}
-                        ${modulesData.modules?.map(module => `
-                            <div class="module-card" data-name="${module.name.toLowerCase()}" data-code="${module.module_code.toLowerCase()}">
-                                <div class="module-info">
-                                    <h3>${module.module_code}: ${module.name}</h3>
-                                    <div class="module-meta">
-                                        <span>📚 ${module.school_name}</span>
-                                        <span>📊 ${module.credits || 0} Credits</span>
-                                        <span>👥 ${module.student_count} Students</span>
-                                    </div>
-                                    <div style="margin-top: 0.5rem;">
-                                        ${module.tags?.map(tag => `<span class="tag">${tag}</span>`).join(' ') || ''}
-                                    </div>
-                                </div>
-                                <button class="btn btn-primary btn-sm" onclick="viewModule(${module.id})">View Details</button>
-                            </div>
-                        `).join('') || ''}
-                    </div>
-                `;
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        }
-
-        function filterModules(query) {
-            const modules = document.querySelectorAll('.module-card');
-            const lowerQuery = query.toLowerCase();
-            
-            modules.forEach(module => {
-                const name = module.dataset.name;
-                const code = module.dataset.code;
-                module.style.display = (name.includes(lowerQuery) || code.includes(lowerQuery)) ? 'flex' : 'none';
-            });
-        }
-
-        async function viewModule(moduleId) {
-            showLoading();
-            navigationHistory.push({ name: 'Module Details', onclick: '' });
-            updateBreadcrumb(navigationHistory);
-            
-            try {
-                const data = await apiFetch(`/modules/${moduleId}`);
-                const module = data.module;
-                const documents = data.documents || [];
-                
-                let enrolled = false;
-                let enrollButton = '';
-                
-                if (authToken) {
-                    try {
-                        const enrollments = await apiFetch('/enrolled');
-                        enrolled = enrollments.modules?.some(m => m.id === moduleId);
-                    } catch (e) {}
-                    
-                    if (enrolled) {
-                        enrollButton = `<button class="btn btn-outline" disabled>✓ Enrolled</button>`;
-                    } else if (module.is_enrollment_open) {
-                        enrollButton = `<button class="btn enroll-btn" onclick="enrollInModule(${moduleId})">Enroll Now</button>`;
-                    } else {
-                        enrollButton = `<button class="btn btn-outline" disabled>Enrollment Closed</button>`;
-                    }
-                } else {
-                    enrollButton = `<button class="btn btn-primary" onclick="openLoginModal()">Sign in to Enroll</button>`;
-                }
-                
-                document.getElementById('content').innerHTML = `
-                    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
-                            <div>
-                                <span class="card-badge">${module.module_code}</span>
-                                <h2 style="font-size: 1.75rem; margin-top: 1rem;">${module.name}</h2>
-                                <p style="color: var(--text-muted); margin-top: 0.5rem;">
-                                    ${module.school_name} • ${module.college_name} • ${module.academic_year}
-                                </p>
-                            </div>
-                            ${enrollButton}
-                        </div>
-                        
-                        ${module.description ? `<p style="margin-bottom: 1.5rem;">${module.description}</p>` : ''}
-                        
-                        <div class="module-meta" style="margin-bottom: 1.5rem;">
-                            <span>📖 ${module.semester_name}</span>
-                            <span>📊 ${module.credits} Credits</span>
-                            <span>👨‍🏫 ${module.lecturer_name || 'TBA'}</span>
-                            <span>👥 ${module.student_count}/${module.max_students} Students</span>
-                        </div>
-                        
-                        <div style="margin-bottom: 1rem;">
-                            ${module.tags?.map(tag => `<span class="tag">${tag}</span>`).join(' ') || ''}
-                        </div>
-                    </div>
-                    
-                    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; margin-top: 1.5rem;">
-                        <h3 style="margin-bottom: 1rem;">📄 Course Documents</h3>
-                        ${documents.length === 0 ? '<p style="color: var(--text-muted);">No documents uploaded yet</p>' : ''}
-                        ${documents.map(doc => `
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--border);">
-                                <div style="display: flex; align-items: center; gap: 1rem;">
-                                    <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.1); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
-                                        ${getFileIcon(doc.file_type)}
-                                    </div>
-                                    <div>
-                                        <strong>${doc.title}</strong>
-                                        <p style="font-size: 0.85rem; color: var(--text-muted);">
-                                            ${doc.category} • ${formatFileSize(doc.file_size)}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn btn-outline btn-sm">Preview</button>
-                                    ${authToken ? `<button class="btn btn-primary btn-sm">Download</button>` : '<button class="btn btn-primary btn-sm" onclick="openLoginModal()">Login to Download</button>'}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        }
-
-        async function enrollInModule(moduleId) {
-            if (!authToken) { openLoginModal(); return; }
-            
-            try {
-                await apiFetch(`/enroll/${moduleId}`, { method: 'POST' });
-                showNotification('Successfully enrolled!', 'success');
-                viewModule(moduleId);
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        }
-
-        async function showMyCourses() {
-            if (!authToken) { openLoginModal(); return; }
-            // Redirect to the new dashboard
-            window.location.href = '/dashboard';
-        }
-
-        async function showAvailableCourses() {
-            if (!authToken) { openLoginModal(); return; }
-            
-            showLoading();
-            updateBreadcrumb([{ name: 'Available Courses', onclick: '' }]);
-            
-            try {
-                const data = await apiFetch('/available');
-                
-                document.getElementById('content').innerHTML = `
-                    <h2 style="margin-bottom: 1.5rem;">Courses Open for Enrollment</h2>
-                    
-                    ${data.modules?.length === 0 ? `
-                        <p style="color: var(--text-muted);">No courses available for enrollment.</p>
-                    ` : `
-                        <div class="grid">
-                            ${data.modules.map(module => `
-                                <div class="card" onclick="viewModule(${module.id})">
-                                    <div class="card-icon">📚</div>
-                                    <h3>${module.module_code}</h3>
-                                    <p>${module.name}</p>
-                                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
-                                        ${module.school_name} • ${module.college_name}
-                                    </p>
-                                    <span class="card-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">
-                                        ${module.spots_left} spots left
-                                    </span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `}
-                `;
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        }
-
-        function getFileIcon(type) {
-            const icons = { 'pdf': '📕', 'doc': '📘', 'xls': '📊', 'ppt': '📑', 'txt': '📝', 'image': '🖼️', 'archive': '📦' };
-            return icons[type] || '📄';
-        }
-
-        function formatFileSize(bytes) {
-            if (!bytes) return '0 B';
-            const units = ['B', 'KB', 'MB', 'GB'];
-            let i = 0;
-            while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
-            return `${bytes.toFixed(1)} ${units[i]}`;
-        }
-
-        function showNotification(message, type = 'info') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = `notification show ${type}`;
-            setTimeout(() => notification.classList.remove('show'), 3000);
-        }
+        });
     </script>
 </body>
 </html>

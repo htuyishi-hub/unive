@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Your Profile - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--header-bg);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .header-nav span {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .onboarding-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .welcome-banner {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 16px;
+        }
+
+        .welcome-banner h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .welcome-banner p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
+        }
+
+        .progress-bar {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.25rem 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            right: 50px;
+            height: 3px;
+            background: var(--border);
+            z-index: 1;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            height: 3px;
+            background: var(--accent);
+            z-index: 2;
+            transition: width 0.5s ease;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 3;
+        }
+
+        .step-number {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--header-bg);
+            border: 3px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-number {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 80px;
+        }
+
+        .step.active .step-label {
+            color: var(--accent);
+        }
+
+        .step-content {
+            background: var(--header-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .step-header h2 {
+            font-size: 1.35rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .colleges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .college-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .college-card:hover {
+            border-color: var(--primary-light);
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .college-card.selected {
+            border-color: var(--accent);
+            background: rgba(198, 153, 60, 0.08);
+        }
+
+        .college-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .college-info h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .college-info p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .college-check {
+            margin-left: auto;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: transparent;
+            font-size: 0.7rem;
+            transition: all 0.25s ease;
+        }
+
+        .college-card.selected .college-check {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .programs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .program-item {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .program-item:hover {
+            border-color: var(--primary-light);
+        }
+
+        .program-item.selected {
+            border-color: var(--accent);
+            background: rgba(198, 153, 60, 0.08);
+        }
+
+        .program-code {
+            background: var(--primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .program-info {
+            flex: 1;
+        }
+
+        .program-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.1rem;
+        }
+
+        .program-info p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .years-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.75rem;
+        }
+
+        .year-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .year-card:hover {
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .year-card.selected {
+            border-color: var(--accent);
+            background: rgba(198, 153, 60, 0.08);
+        }
+
+        .year-card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .year-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .year-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+
+        .academic-years {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .year-item {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .year-item:hover {
+            border-color: var(--primary-light);
+        }
+
+        .year-item.selected {
+            border-color: var(--accent);
+            background: rgba(198, 153, 60, 0.08);
+        }
+
+        .year-item h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .year-item p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-row {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 120px;
+        }
+
+        .summary-value {
+            flex: 1;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .summary-value i {
+            color: var(--accent);
+        }
+
+        .summary-btn {
+            padding: 0.35rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: var(--accent);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .summary-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .confirm-box {
+            background: rgba(198, 153, 60, 0.08);
+            border: 1px solid rgba(198, 153, 60, 0.25);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .confirm-box h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .confirm-box p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .confirm-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+
+        .confirm-checkbox input {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .confirm-checkbox span {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px -5px rgba(198, 153, 60, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+
+        @media (max-width: 768px) {
+            .years-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .step-label {
+                font-size: 0.65rem;
+                max-width: 60px;
+            }
+
+            .progress-steps::before {
+                left: 25px;
+                right: 25px;
+            }
+
+            .progress-line {
+                left: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-university"></i> UR Open Courseware</h1>
+        <nav class="header-nav">
+            <span>Step <span id="currentStepNum">1</span> of 5</span>
+        </nav>
+    </header>
+
+    <div class="onboarding-container">
+        <div class="welcome-banner">
+            <h1 id="welcomeTitle">Welcome to Your Academic Journey</h1>
+            <p>Let's personalize your learning experience at the University of Rwanda</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-steps">
+                <div class="progress-line" id="progressLine"></div>
+                <div class="step active" id="step1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">College</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Program</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Year</div>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Academic Year</div>
+                </div>
+                <div class="step" id="step5">
+                    <div class="step-number">5</div>
+                    <div class="step-label">Confirm</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-content" id="stepContent"></div>
+    </div>
+
+    <script>
+        const colleges = [
+            { id: 'cass', name: 'College of Arts and Social Sciences', icon: 'fa-users', programs: 8 },
+            { id: 'cbe', name: 'College of Business and Economics', icon: 'fa-briefcase', programs: 6 },
+            { id: 'caff', name: 'College of Agriculture and Food Sciences', icon: 'fa-seedling', programs: 4 },
+            { id: 'ce', name: 'College of Education', icon: 'fa-chalkboard-teacher', programs: 3 },
+            { id: 'cmhs', name: 'College of Medicine and Health Sciences', icon: 'fa-user-md', programs: 5 },
+            { id: 'cst', name: 'College of Science and Technology', icon: 'fa-flask', programs: 14 },
+            { id: 'cvas', name: 'College of Veterinary and Animal Sciences', icon: 'fa-paw', programs: 3 }
+        ];
+
+        const programs = {
+            'cst': [
+                { code: 'BH8COE', name: 'Computer Engineering', duration: 4 },
+                { code: 'BH8CSC', name: 'Computer Science', duration: 4 },
+                { code: 'BH8ISY', name: 'Information Systems', duration: 4 },
+                { code: 'BH8ITE', name: 'Information Technology', duration: 4 },
+                { code: 'BH8GEO', name: 'Applied Geology', duration: 4 },
+                { code: 'BH8ANC', name: 'Analytical Chemistry', duration: 4 },
+                { code: 'BH8APM', name: 'Applied Mathematics', duration: 4 },
+                { code: 'BH8APH', name: 'Applied Physics', duration: 4 },
+                { code: 'BH8BBC', name: 'Biochemistry', duration: 4 },
+                { code: 'BH8BIO', name: 'Biotechnology', duration: 4 },
+                { code: 'BH8COB', name: 'Conservation Biology', duration: 4 },
+                { code: 'BH8NST', name: 'Nuclear Science', duration: 4 },
+                { code: 'BH8OCH', name: 'Organic Chemistry', duration: 4 },
+                { code: 'BH8STA', name: 'Statistics', duration: 4 }
+            ],
+            'cass': [
+                { code: 'BH8LLB', name: 'Bachelor of Law', duration: 4 },
+                { code: 'BH8JCO', name: 'Journalism', duration: 4 },
+                { code: 'BH8SOC', name: 'Sociology', duration: 4 },
+                { code: 'BH8ANT', name: 'Anthropology', duration: 4 },
+                { code: 'BH8HIS', name: 'History', duration: 4 },
+                { code: 'BH8ECO', name: 'Economics', duration: 4 },
+                { code: 'BH8PSY', name: 'Psychology', duration: 4 }
+            ],
+            'cbe': [
+                { code: 'BH8BBA', name: 'Business Administration', duration: 4 },
+                { code: 'BH8ACC', name: 'Accounting', duration: 4 },
+                { code: 'BH8FIN', name: 'Finance', duration: 4 },
+                { code: 'BH8MGT', name: 'Management', duration: 4 },
+                { code: 'BH8MKT', name: 'Marketing', duration: 4 }
+            ],
+            'caff': [
+                { code: 'BH8AGR', name: 'Agriculture', duration: 4 },
+                { code: 'BH8FST', name: 'Food Science', duration: 4 },
+                { code: 'BH8AGE', name: 'Agricultural Engineering', duration: 4 }
+            ],
+            'cmhs': [
+                { code: 'BH8MED', name: 'Medicine', duration: 6 },
+                { code: 'BH8NUR', name: 'Nursing', duration: 4 },
+                { code: 'BH8PHA', name: 'Pharmacy', duration: 5 },
+                { code: 'BH8MLS', name: 'Medical Laboratory', duration: 4 },
+                { code: 'BH8SPH', name: 'Public Health', duration: 4 }
+            ],
+            'ce': [
+                { code: 'BH8EDU', name: 'Education', duration: 4 },
+                { code: 'BH8SNE', name: 'Special Needs Education', duration: 4 },
+                { code: 'BH8ECE', name: 'Early Childhood Education', duration: 4 }
+            ],
+            'cvas': [
+                { code: 'BH8VET', name: 'Veterinary Medicine', duration: 6 },
+                { code: 'BH8ANS', name: 'Animal Science', duration: 4 },
+                { code: 'BH8VMT', name: 'Veterinary Laboratory', duration: 4 }
+            ]
+        };
+
+        const academicYears = [
+            { id: '2024-2025', name: '2024-2025', description: 'Current Academic Year' },
+            { id: '2025-2026', name: '2025-2026', description: 'Upcoming Academic Year' }
+        ];
+
+        let currentStep = 1;
+        let selectedCollege = null;
+        let selectedCollegeName = null;
+        let selectedProgram = null;
+        let selectedProgramCode = null;
+        let selectedProgramDuration = null;
+        let selectedYear = null;
+        let selectedAcademicYear = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            const user = JSON.parse(localStorage.getItem('ur_current_user') || '{}');
+            if (!user.email) {
+                // No user found, redirect to registration
+                window.location.href = '/register';
+                return;
+            }
+            if (user.onboardingComplete) {
+                // Already completed onboarding, redirect to dashboard
+                window.location.href = '/my-dashboard';
+                return;
+            }
+            // Personalize welcome message
+            if (user.name) {
+                document.getElementById('welcomeTitle').textContent = `Welcome, ${user.name}`;
+            }
+            loadStepContent();
+        });
+
+        function loadStepContent() {
+            const content = document.getElementById('stepContent');
+            document.getElementById('currentStepNum').textContent = currentStep;
+            updateProgress();
+
+            switch(currentStep) {
+                case 1:
+                    content.innerHTML = renderCollegeStep();
+                    break;
+                case 2:
+                    content.innerHTML = renderProgramStep();
+                    break;
+                case 3:
+                    content.innerHTML = renderYearStep();
+                    break;
+                case 4:
+                    content.innerHTML = renderAcademicYearStep();
+                    break;
+                case 5:
+                    content.innerHTML = renderConfirmationStep();
+                    break;
+            }
+        }
+
+        function renderCollegeStep() {
+            return `
+                <div class="step-header">
+                    <h2>Select Your College</h2>
+                    <p>Choose the UR college where your program is offered</p>
+                </div>
+                <div class="colleges-grid">
+                    ${colleges.map(college => `
+                        <div class="college-card" onclick="selectCollege('${college.id}', '${college.name}')" id="college-${college.id}">
+                            <div class="college-icon"><i class="fas ${college.icon}"></i></div>
+                            <div class="college-info">
+                                <h3>${college.name}</h3>
+                                <p>${college.programs} programs available</p>
+                            </div>
+                            <div class="college-check"><i class="fas fa-check"></i></div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="btn-container">
+                    <button class="btn btn-primary" id="nextBtn" onclick="goToStep(2)" disabled>
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderProgramStep() {
+            const college = colleges.find(c => c.id === selectedCollege);
+            const collegePrograms = programs[selectedCollege] || [];
+            return `
+                <div class="step-header">
+                    <h2>Select Your Program</h2>
+                    <p>Choose your program within ${college.name}</p>
+                </div>
+                <div class="programs-list">
+                    ${collegePrograms.map(program => `
+                        <div class="program-item" onclick="selectProgram('${program.code}', '${program.name}', ${program.duration})" id="program-${program.code}">
+                            <div class="program-code">${program.code}</div>
+                            <div class="program-info">
+                                <h4>${program.name}</h4>
+                                <p>${program.duration} years</p>
+                            </div>
+                            <div class="college-check"><i class="fas fa-check"></i></div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="btn-container">
+                    <button class="btn btn-outline" onclick="goToStep(1)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="goToStep(3)" disabled>
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderYearStep() {
+            const maxYears = selectedProgramDuration || 4;
+            let yearsHTML = '';
+            for (let i = 1; i <= maxYears; i++) {
+                yearsHTML += `<div class="year-card" onclick="selectYear(${i})" id="year-${i}">
+                    <div class="year-number">${i}</div>
+                    <div class="year-label">Year ${i}</div>
+                </div>`;
+            }
+            return `
+                <div class="step-header">
+                    <h2>Select Year of Study</h2>
+                    <p>Which year of your program are you enrolled in?</p>
+                </div>
+                <div class="years-grid">${yearsHTML}</div>
+                <div class="btn-container">
+                    <button class="btn btn-outline" onclick="goToStep(2)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="goToStep(4)" disabled>
+                        Continue <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderAcademicYearStep() {
+            return `
+                <div class="step-header">
+                    <h2>Select Academic Year</h2>
+                    <p>Choose the academic year for your enrollment</p>
+                </div>
+                <div class="academic-years">
+                    ${academicYears.map(year => `
+                        <div class="year-item" onclick="selectAcademicYear('${year.id}')" id="academicYear-${year.id}">
+                            <h4>${year.name}</h4>
+                            <p>${year.description}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="btn-container">
+                    <button class="btn btn-outline" onclick="goToStep(3)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="goToStep(5)" disabled>
+                        Review <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderConfirmationStep() {
+            return `
+                <div class="step-header">
+                    <h2>Review Your Selections</h2>
+                    <p>Please confirm your academic information is correct</p>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-row">
+                        <span class="summary-label">College</span>
+                        <span class="summary-value"><i class="fas fa-university"></i> ${selectedCollegeName}</span>
+                        <button class="summary-btn" onclick="goToStep(1)">Edit</button>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Program</span>
+                        <span class="summary-value"><i class="fas fa-graduation-cap"></i> ${selectedProgramCode}: ${selectedProgram}</span>
+                        <button class="summary-btn" onclick="goToStep(2)">Edit</button>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Year</span>
+                        <span class="summary-value"><i class="fas fa-calendar"></i> Year ${selectedYear}</span>
+                        <button class="summary-btn" onclick="goToStep(3)">Edit</button>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Academic Year</span>
+                        <span class="summary-value"><i class="fas fa-calendar-alt"></i> ${selectedAcademicYear}</span>
+                        <button class="summary-btn" onclick="goToStep(4)">Edit</button>
+                    </div>
+                </div>
+                <div class="confirm-box">
+                    <h4><i class="fas fa-info-circle"></i> Confirmation Required</h4>
+                    <p>Your dashboard will be personalized based on these selections. Modules will be filtered by your program and year. You can update these settings later from your profile.</p>
+                    <label class="confirm-checkbox">
+                        <input type="checkbox" id="confirmSetup">
+                        <span>I confirm that the information above is correct and activate my personalized dashboard</span>
+                    </label>
+                </div>
+                <div class="btn-container">
+                    <button class="btn btn-outline" onclick="goToStep(4)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-primary" id="completeBtn" onclick="completeOnboarding()" disabled>
+                        <i class="fas fa-check"></i> Complete Setup
+                    </button>
+                </div>
+            `;
+        }
+
+        function selectCollege(id, name) {
+            selectedCollege = id;
+            selectedCollegeName = name;
+            document.querySelectorAll('.college-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById(`college-${id}`).classList.add('selected');
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function selectProgram(code, name, duration) {
+            selectedProgramCode = code;
+            selectedProgram = name;
+            selectedProgramDuration = duration;
+            document.querySelectorAll('.program-item').forEach(p => p.classList.remove('selected'));
+            document.getElementById(`program-${code}`).classList.add('selected');
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function selectYear(year) {
+            selectedYear = year;
+            document.querySelectorAll('.year-card').forEach(y => y.classList.remove('selected'));
+            document.getElementById(`year-${year}`).classList.add('selected');
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function selectAcademicYear(yearId) {
+            selectedAcademicYear = yearId;
+            document.querySelectorAll('.year-item').forEach(y => y.classList.remove('selected'));
+            document.getElementById(`academicYear-${yearId}`).classList.add('selected');
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        document.addEventListener('change', function(e) {
+            if (e.target.id === 'confirmSetup') {
+                document.getElementById('completeBtn').disabled = !e.target.checked;
+            }
+        });
+
+        function goToStep(step) {
+            currentStep = step;
+            loadStepContent();
+        }
+
+        function updateProgress() {
+            const line = document.getElementById('progressLine');
+            const widths = ['0%', '25%', '50%', '75%', '100%'];
+            line.style.width = widths[currentStep - 1];
+            for (let i = 1; i <= 5; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.remove('active', 'completed');
+                if (i < currentStep) {
+                    step.classList.add('completed');
+                    step.querySelector('.step-number').innerHTML = '<i class="fas fa-check"></i>';
+                } else if (i === currentStep) {
+                    step.classList.add('active');
+                    step.querySelector('.step-number').textContent = i;
+                } else {
+                    step.querySelector('.step-number').textContent = i;
+                }
+            }
+        }
+
+        function completeOnboarding() {
+            const user = JSON.parse(localStorage.getItem('ur_current_user') || '{}');
+            user.college = selectedCollege;
+            user.collegeName = selectedCollegeName;
+            user.programCode = selectedProgramCode;
+            user.program = selectedProgram;
+            user.year = selectedYear;
+            user.academicYear = selectedAcademicYear;
+            user.onboardingComplete = true;
+            localStorage.setItem('ur_current_user', JSON.stringify(user));
+            window.location.href = '/my-dashboard';
+        }
+    </script>
+</body>
+</html>

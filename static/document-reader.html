@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Reader - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --highlight-yellow: rgba(255, 217, 61, 0.4);
+            --highlight-green: rgba(16, 185, 129, 0.4);
+            --highlight-blue: rgba(59, 130, 246, 0.4);
+            --highlight-pink: rgba(236, 72, 153, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: var(--header-bg);
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.5rem 0.85rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .document-info h1 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+
+        .document-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover, .icon-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 57px);
+        }
+
+        .sidebar-left {
+            width: 280px;
+            background: var(--header-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            overflow: hidden;
+        }
+
+        .sidebar-left.collapsed {
+            width: 0;
+            border-right: none;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .search-box {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.85rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-input input {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            width: 100%;
+            outline: none;
+        }
+
+        .toc-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+        }
+
+        .toc-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 0.8rem;
+        }
+
+        .toc-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .toc-item.active {
+            background: rgba(198, 153, 60, 0.08);
+            border-left: 2px solid var(--accent);
+        }
+
+        .toc-item i {
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 0.65rem;
+        }
+
+        .toc-label {
+            color: var(--text-muted);
+        }
+
+        .toc-item.active .toc-label {
+            color: var(--accent);
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toolbar {
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding-right: 0.75rem;
+            border-right: 1px solid var(--border);
+            margin-right: 0.5rem;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.45rem 0.55rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 0.85rem;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--card-bg);
+            color: var(--text-main);
+        }
+
+        .toolbar-btn.active {
+            color: var(--accent);
+        }
+
+        .toolbar-btn[data-color="yellow"] { color: #fbbf24; }
+        .toolbar-btn[data-color="green"] { color: #10b981; }
+        .toolbar-btn[data-color="blue"] { color: #3b82f6; }
+        .toolbar-btn[data-color="pink"] { color: #ec4899; }
+
+        .document-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .document-content {
+            font-family: 'Merriweather', Georgia, serif;
+            line-height: 1.9;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .document-content h1 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent);
+            text-align: center;
+        }
+
+        .document-content h2 {
+            font-size: 1.35rem;
+            margin: 2rem 0 1rem;
+            color: var(--accent);
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .document-content h3 {
+            font-size: 1.1rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text-main);
+        }
+
+        .document-content p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        .article {
+            margin: 1.5rem 0;
+            padding: 0.75rem 1rem;
+            border-left: 3px solid var(--primary);
+            background: rgba(26, 54, 93, 0.1);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .article-number {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .section {
+            margin: 1rem 0;
+            padding: 0.5rem 0.75rem;
+            border-left: 2px solid var(--primary-light);
+            background: rgba(44, 82, 130, 0.1);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .clause {
+            margin: 0.5rem 0;
+            padding-left: 1.25rem;
+        }
+
+        .sub-clause {
+            margin: 0.25rem 0;
+            padding-left: 1.75rem;
+            font-size: 0.95rem;
+        }
+
+        .cross-ref {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+        }
+
+        .cross-ref:hover {
+            color: var(--accent-light);
+        }
+
+        .highlight {
+            background: var(--highlight-yellow);
+            cursor: pointer;
+        }
+
+        .highlight.green { background: var(--highlight-green); }
+        .highlight.blue { background: var(--highlight-blue); }
+        .highlight.pink { background: var(--highlight-pink); }
+
+        .footnote {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-right {
+            width: 320px;
+            background: var(--header-bg);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar-right.collapsed {
+            width: 0;
+            border-left: none;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab:hover {
+            color: var(--text-main);
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .annotation-item {
+            background: var(--card-bg);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .annotation-item:hover {
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .annotation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.35rem;
+        }
+
+        .annotation-type {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .annotation-type.highlight {
+            background: var(--highlight-yellow);
+            color: #000;
+        }
+
+        .annotation-type.note {
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+        }
+
+        .annotation-type.bookmark {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .annotation-date {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .annotation-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .search-results {
+            font-size: 0.85rem;
+        }
+
+        .search-result-item {
+            padding: 0.6rem;
+            background: var(--card-bg);
+            border-radius: 4px;
+            margin-bottom: 0.35rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .search-result-item:hover {
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .search-result-item .match {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .search-result-item .context {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .definitions-list {
+            font-size: 0.85rem;
+        }
+
+        .definition-item {
+            padding: 0.6rem;
+            background: var(--card-bg);
+            border-radius: 4px;
+            margin-bottom: 0.35rem;
+        }
+
+        .definition-term {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .definition-text {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .reading-progress {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 4px;
+            background: var(--border);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 9999px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            min-width: 40px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-header {
+            margin-bottom: 1rem;
+        }
+
+        .modal-header h3 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-header p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .modal-body textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 0.75rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-light);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+
+        .download-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .download-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--card-bg);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .download-option:hover {
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .download-option i {
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        .download-info h4 {
+            font-size: 0.85rem;
+            margin-bottom: 0.1rem;
+        }
+
+        .download-info p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar-right {
+                position: fixed;
+                right: 0;
+                top: 57px;
+                height: calc(100% - 57px);
+                z-index: 90;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-left {
+                position: fixed;
+                left: 0;
+                top: 57px;
+                height: calc(100% - 57px);
+                z-index: 90;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <button class="back-btn" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back</span>
+            </button>
+            <div class="document-info">
+                <h1 id="docTitle">Constitutional Law of Rwanda</h1>
+                <div class="document-meta">
+                    <span><i class="fas fa-code"></i> BH8LLB-201</span>
+                    <span><i class="fas fa-user"></i> Prof. Sarah Kamanzi</span>
+                    <span><i class="fas fa-file-size"></i> 2.4 MB</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-center">
+            <button class="icon-btn" onclick="toggleSidebar('left')" title="Table of Contents">
+                <i class="fas fa-list"></i>
+            </button>
+            <button class="icon-btn" onclick="toggleSearch()" title="Search">
+                <i class="fas fa-search"></i>
+            </button>
+            <button class="icon-btn" onclick="toggleSidebar('right')" title="Annotations">
+                <i class="fas fa-bookmark"></i>
+            </button>
+        </div>
+        <div class="header-right">
+            <button class="icon-btn" onclick="changeTextSize(-1)" title="Decrease Text">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button class="icon-btn" onclick="resetTextSize()" title="Reset Text">
+                <i class="fas fa-font"></i>
+            </button>
+            <button class="icon-btn" onclick="changeTextSize(1)" title="Increase Text">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="icon-btn" onclick="toggleFullscreen()" title="Fullscreen">
+                <i class="fas fa-expand"></i>
+            </button>
+            <button class="icon-btn" onclick="showDownloadModal()" title="Download">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar-left" id="sidebarLeft">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-list"></i> Table of Contents</h3>
+                <button class="icon-btn" onclick="toggleSidebar('left')" style="width:28px;height:28px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="toc-list" id="tocList">
+                <div class="toc-item" onclick="scrollToElement('preamble')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Preamble</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('title1')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Title I: General Provisions</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('article1')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Article 1</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('article9')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Article 9</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('title2')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Title II: The President</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('article62')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Article 62</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('article64')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Article 64</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('title3')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Title III: The Government</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('article101')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Article 101</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('title4')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Title IV: Parliament</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('article111')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Article 111</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('title7')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Title VII: Judiciary</span>
+                </div>
+                <div class="toc-item" onclick="scrollToElement('article156')">
+                    <i class="fas fa-caret-right"></i>
+                    <span class="toc-label">Article 156</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="toolbar">
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="addHighlight('yellow')" title="Yellow Highlight">
+                        <i class="fas fa-palette" style="color: #fbbf24;"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="addHighlight('green')" title="Green Highlight">
+                        <i class="fas fa-palette" style="color: #10b981;"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="addHighlight('blue')" title="Blue Highlight">
+                        <i class="fas fa-palette" style="color: #3b82f6;"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="addHighlight('pink')" title="Pink Highlight">
+                        <i class="fas fa-palette" style="color: #ec4899;"></i>
+                    </button>
+                </div>
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="addNote()" title="Add Note">
+                        <i class="fas fa-sticky-note"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="toggleBookmark()" title="Bookmark">
+                        <i class="fas fa-bookmark"></i>
+                    </button>
+                </div>
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" onclick="goToArticle()" title="Go to Article">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="showDefinitionModal()" title="Key Definitions">
+                        <i class="fas fa-book-open"></i>
+                    </button>
+                </div>
+                <div style="margin-left: auto; font-size: 0.75rem; color: var(--text-muted);">
+                    <span id="currentPosition">Page 1</span> | <span id="wordCount">2,450 words</span>
+                </div>
+            </div>
+
+            <div class="document-container" id="documentContainer">
+                <div class="document-content" id="documentContent">
+                    <h1 id="docHeading">CONSTITUTIONAL LAW OF RWANDA</h1>
+                    <p style="text-align: center; font-style: italic; color: var(--text-muted); margin-bottom: 2rem;">
+                        Law N° 02/2003 of 12/05/2003 as amended to date
+                    </p>
+
+                    <h2 id="preamble">Preamble</h2>
+                    <p>
+                        We, the people of Rwanda;<p>
+                        Considering our history, which has been marked by the accumulation of a bitter experience of <span class="cross-ref" onclick="navigateToArticle('23')">grievous misfortunes</span>, specifically the genocide perpetrated against the Tutsi which destroyed Rwandan humanity;
+                        </p>
+                    <p>
+                        Conscious of the fact that the dangers that threatened the very survival of our Nation are now over;
+                        </p>
+                    <p>
+                        Determined to fight the evil of ethnic discrimination and divisionism which has caused our misfortunes;
+                        </p>
+                    <p>
+                        Recognizing that the Constitution of the Republic of Rwanda of 4 June 1991 as amended to date, especially by the Constitutional Law n° 2/94 of 14/8/1994 was a step towards the establishment of a State governed by the rule of law, but that it did not succeed in preventing the tragedy which befell our people;
+                        </p>
+                    <p>
+                        Recalling the Arusha Declaration on Democracy and Good Governance signed on 3 August 2000;
+                        </p>
+                    <p>
+                        Determined to build a nation governed by the rule of law, a nation where there is equal opportunity between men and women, a nation which abides by the Universal Declaration of Human Rights, the African Charter on Human and Peoples' Rights and other international human rights instruments to which Rwanda is a party;
+                        </p>
+                    <p>
+                        Determined to build a State that guarantees social justice to all, a State where the welfare of the citizen constitutes the foundation of all actions of the Government;
+                        </p>
+                    <p>
+                        Determined to build a State where there is partnership between men and women and all other stakeholders in the development of our country;
+                        </p>
+                    <p>
+                        Reaffirming our commitment to the establishment of a political framework which is conducive to a democratic multiparty system, political pluralism and to the holding of regular, fair and transparent elections;
+                        </p>
+                    <p>
+                        Determined to do everything possible to promote national unity and reconciliation, and to strengthen social cohesion;
+                        </p>
+                    <p>
+                        Conscious of the need to establish institutions and mechanisms of democratic governance and good governance, which are vital for economic, social and cultural development;
+                        </p>
+                    <p>
+                        Reaffirming our determination to fight poverty and to ensure the well being of all Rwandans through the exploitation of our potential and the full development of our human resources;
+                        </p>
+                    <p>
+                        Determined to develop agriculture, livestock, industry, tourism, and to promote crafts and all other sectors likely to contribute to economic growth;
+                        </p>
+                    <p>
+                        Determined to preserve a clean, healthy and balanced environment, which is essential for sustainable development;
+                        </p>
+                    <p>
+                        Reaffirming our commitment to African unity and to the peaceful coexistence of nations;
+                        </p>
+                    <p>
+                        Recognizing the importance of international cooperation in the building of a world of justice, peace and prosperity;
+                        </p>
+                    <p>
+                        Solemnly adopt and ratify this Constitution.
+                    </p>
+
+                    <h2 id="title1">TITLE I: GENERAL PROVISIONS</h2>
+
+                    <div class="article" id="article1">
+                        <div class="article-number">Article 1</div>
+                        <p>Sovereignty belongs to the people who shall exercise it directly by means of referendum or through their representatives.</p>
+                    </div>
+
+                    <p>
+                        The people shall be consulted in the cases prescribed by this Constitution. The manner of such consultation shall be determined by an organic law.
+                    </p>
+
+                    <p>
+                        The form, structure, organization and functioning of the State shall be based on the principles of democracy, the rule of law, national unity, social cohesion, equality of all Rwandans, parity between men and women, and on respect for fundamental human rights.
+                    </p>
+
+                    <div class="article" id="article9">
+                        <div class="article-number">Article 9</div>
+                        <p>The State of Rwanda commits itself to the following fundamental principles:</p>
+                        <p>
+                        1° to eradicate every form of discrimination and divisionism, in particular ethnic discrimination and divisionism;
+                        </p>
+                        <p>
+                        2° to promote national unity and social cohesion among all Rwandans;
+                        </p>
+                        <p>
+                        3° to build a State governed by the rule of law, a democratic State based on elections and on the political plurality;
+                        </p>
+                        <p>
+                        4° to establish the principle of good governance which includes the accountability of leaders and the responsibility of the governed;
+                        </p>
+                        <p>
+                        5° to establish a system of decentralized administration;
+                        </p>
+                        <p>
+                        6° to develop Rwanda's image abroad and to promote its interests.
+                        </p>
+                    </div>
+
+                    <h2 id="title2">TITLE II: THE PRESIDENT</h2>
+
+                    <p>
+                        The President of the Republic is the Head of State and the Symbol of national unity. He shall embody the continuity of the State and shall be the guarantor of national independence, territorial integrity and compliance with international treaties and agreements.
+                    </p>
+
+                    <div class="article" id="article62">
+                        <div class="article-number">Article 62</div>
+                        <p>To be elected President of the Republic, a candidate must:</p>
+                        <p>
+                        1° be a Rwandan by birth;
+                        </p>
+                        <p>
+                        2° be a person of proven integrity;
+                        </p>
+                        <p>
+                        3° enjoy all civil and political rights;
+                        </p>
+                        <p>
+                        4° be at least thirty-five (35) years of age;
+                        </p>
+                        <p>
+                        5° be mentally and physically fit for the duties of his office;
+                        </p>
+                        <p>
+                        6° not have been sentenced to imprisonment for more than six (6) months, except for petty offences or felonies which are rehabilitated in accordance with the law;
+                        </p>
+                        <p>
+                        7° not have been convicted of the crime of genocide or any other crime against humanity.
+                        </p>
+                    </div>
+
+                    <div class="article" id="article64">
+                        <div class="article-number">Article 64</div>
+                        <p>The President of the Republic shall be elected for a term of five (5) years renewable only once. No one shall serve as President of the Republic for more than two (2) terms.</p>
+                    </div>
+
+                    <div class="section">
+                        <strong>Section 2: Powers of the President</strong>
+                    </div>
+
+                    <p>
+                        The President of the Republic shall exercise the following powers:
+                    </p>
+
+                    <p>
+                        1° to define the fundamental objectives of the foreign policy of Rwanda after consultation with the Prime Minister;
+                    </p>
+
+                    <p>
+                        2° to negotiate and conclude, on behalf of Rwanda, international treaties and agreements, and to have them ratified in accordance with the law;
+                    </p>
+
+                    <p>
+                        3° to appoint and recall ambassadors and other diplomatic representatives on the proposal of the Prime Minister;
+                    </p>
+
+                    <p>
+                        4° to receive letters of credence from foreign diplomatic representatives;
+                    </p>
+
+                    <p>
+                        5° to be the Commander-in-Chief of the Rwandan Defence Forces and the Rwanda National Police;
+                    </p>
+
+                    <p>
+                        6° to declare a state of war after authorization by Parliament as provided for in <span class="cross-ref" onclick="navigateToArticle('112')">Article 112</span> of this Constitution;
+                    </p>
+
+                    <p>
+                        7° to declare a state of emergency or a state of siege after authorization by the Chambers of Parliament as provided for in the law;
+                    </p>
+
+                    <p>
+                        8° to preside over the Council of Ministers when he/she deems it necessary;
+                    </p>
+
+                    <p>
+                        9° to address messages to the Nation and to Parliament;
+                    </p>
+
+                    <p>
+                        10° to delegate some of his/her powers to the Prime Minister;
+                    </p>
+
+                    <p>
+                        11° to exercise the right of pardon;
+                    </p>
+
+                    <p>
+                        12° to award honours and decorations in accordance with the law.
+                    </p>
+
+                    <h2 id="title3">TITLE III: THE GOVERNMENT</h2>
+
+                    <p>
+                        The Government is the Executive organ of the State. It shall implement the Government Programme approved by the Chamber of Deputies.
+                    </p>
+
+                    <div class="article" id="article101">
+                        <div class="article-number">Article 101</div>
+                        <p>The Prime Minister shall be appointed as follows:</p>
+                        <p>
+                        The President of the Republic shall, after consultations with the political parties represented in Parliament and taking into account the election results, appoint a Prime Minister who shall be from the political party or the coalition having the majority in the Chamber of Deputies.
+                        </p>
+                    </div>
+
+                    <h2 id="title4">TITLE IV: PARLIAMENT</h2>
+
+                    <p>
+                        Parliament shall exercise the legislative power and shall control the action of the Government.
+                    </p>
+
+                    <div class="article" id="article111">
+                        <div class="article-number">Article 111</div>
+                        <p>Parliament shall be composed of two (2) Chambers:</p>
+                        <p>
+                        1° the Chamber of Deputies;
+                        </p>
+                        <p>
+                        2° the Senate.
+                        </p>
+                    </div>
+
+                    <h2 id="title7">TITLE VII: THE JUDICIARY</h2>
+
+                    <p>
+                        The Judiciary shall be independent. It shall ensure the settlement of disputes in accordance with the law.
+                    </p>
+
+                    <div class="article" id="article156">
+                        <div class="article-number">Article 156</div>
+                        <p>The Supreme Court shall be the highest court of the land. It shall have jurisdiction throughout the national territory.</p>
+                        <p>
+                        The organization, functioning and jurisdiction of the Supreme Court shall be determined by an organic law.
+                        </p>
+                    </div>
+
+                    <div class="section">
+                        <strong>Section 2: Powers of the Courts</strong>
+                    </div>
+
+                    <div class="clause">
+                        <strong>(a)</strong> The Courts shall have jurisdiction in civil and criminal matters as well as in labour disputes.
+                    </div>
+
+                    <div class="sub-clause">
+                        <strong>(i)</strong> The Courts shall also have jurisdiction in matters relating to the election of the President of the Republic and the election of the members of Parliament.
+                    </div>
+
+                    <div class="clause">
+                        <strong>(b)</strong> The Courts shall have jurisdiction to try the President of the Republic and the Prime Minister for high treason, for violation of the Constitution or for any other serious crime.
+                    </div>
+
+                    <p class="footnote">
+                        [This document contains excerpts from the Constitution of Rwanda. For the complete text, please refer to the official government publications.]
+                    </p>
+                </div>
+            </div>
+
+            <div class="reading-progress">
+                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fas fa-book-reader"></i></span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="readingProgress" style="width: 0%"></div>
+                </div>
+                <span class="progress-text" id="progressText">0%</span>
+            </div>
+        </main>
+
+        <aside class="sidebar-right" id="sidebarRight">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('annotations')">Highlights</button>
+                <button class="tab" onclick="switchTab('search')">Search</button>
+                <button class="tab" onclick="switchTab('definitions')">Definitions</button>
+            </div>
+
+            <div class="tab-content active" id="annotationsTab">
+                <div id="annotationsList">
+                    <div class="annotation-item">
+                        <div class="annotation-header">
+                            <span class="annotation-type highlight">Highlight</span>
+                            <span class="annotation-date">2h ago</span>
+                        </div>
+                        <div class="annotation-text">"Sovereignty belongs to the people..." - key constitutional principle</div>
+                    </div>
+                    <div class="annotation-item">
+                        <div class="annotation-header">
+                            <span class="annotation-type note">Note</span>
+                            <span class="annotation-date">1d ago</span>
+                        </div>
+                        <div class="annotation-text">Compare with Article 62 requirements for Presidential eligibility</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="searchTab">
+                <div class="search-box" style="margin-bottom: 1rem;">
+                    <div class="search-input">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="docSearchInput" placeholder="Search in document..." oninput="searchInDocument()">
+                    </div>
+                </div>
+                <div id="searchResults" class="search-results">
+                    <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">Search for keywords, phrases, or legal terms</p>
+                </div>
+            </div>
+
+            <div class="tab-content" id="definitionsTab">
+                <div class="definitions-list" id="definitionsList">
+                    <div class="definition-item">
+                        <div class="definition-term">Sovereignty</div>
+                        <div class="definition-text">The supreme power or authority of the State, vested in the people who exercise it directly or through their representatives.</div>
+                    </div>
+                    <div class="definition-item">
+                        <div class="definition-term">Rule of Law</div>
+                        <div class="definition-text">The principle that all individuals, institutions, and entities are accountable to laws that are publicly promulgated, equally enforced, and independently adjudicated.</div>
+                    </div>
+                    <div class="definition-item">
+                        <div class="definition-term">Divisionism</div>
+                        <div class="definition-text">The act of creating or fostering divisions among people, particularly on ethnic, regional, or other grounds, which is prohibited under Rwandan law.</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Note</h3>
+                <p>Add a private note to this section</p>
+            </div>
+            <div class="modal-body">
+                <textarea id="noteText" placeholder="Type your note here..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('noteModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveNote()">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="gotoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Go to Article</h3>
+                <p>Enter the article number to jump to</p>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="gotoInput" class="form-input" placeholder="e.g., Article 15 or 15" style="width: 100%;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('gotoModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="executeGoto()">Go</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="downloadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Download Document</h3>
+                <p>Choose your download format</p>
+            </div>
+            <div class="modal-body">
+                <div class="download-options">
+                    <div class="download-option" onclick="downloadDocument('pdf')">
+                        <i class="fas fa-file-pdf"></i>
+                        <div class="download-info">
+                            <h4>PDF Document</h4>
+                            <p>Original format, best for printing</p>
+                        </div>
+                    </div>
+                    <div class="download-option" onclick="downloadDocument('docx')">
+                        <i class="fas fa-file-word"></i>
+                        <div class="download-info">
+                            <h4>Word Document</h4>
+                            <p>Editable format (.docx)</p>
+                        </div>
+                    </div>
+                    <div class="download-option" onclick="downloadDocument('highlighted')">
+                        <i class="fas fa-highlighter"></i>
+                        <div class="download-info">
+                            <h4>With Annotations</h4>
+                            <p>Includes your highlights and notes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('downloadModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentHighlightColor = 'yellow';
+        let textSize = 1;
+        let isBookmarked = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadReadingProgress();
+            setupSelectionHandler();
+        });
+
+        function setupSelectionHandler() {
+            document.addEventListener('mouseup', function() {
+                const selection = window.getSelection();
+                if (selection.toString().length > 0) {
+                    currentHighlightColor = 'yellow';
+                }
+            });
+        }
+
+        function addHighlight(color) {
+            const selection = window.getSelection();
+            if (selection.toString().length === 0) {
+                alert('Please select text to highlight');
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const span = document.createElement('span');
+            span.className = `highlight ${color}`;
+            span.onclick = function(e) {
+                if (e.target === span) {
+                    showHighlightMenu(span);
+                }
+            };
+
+            try {
+                range.surroundContents(span);
+                saveHighlight(span, color);
+            } catch (e) {
+                alert('Cannot highlight across different elements');
+            }
+        }
+
+        function showHighlightMenu(element) {
+            const menu = document.createElement('div');
+            menu.className = 'highlight-menu';
+            menu.style.cssText = 'position:absolute;background:var(--header-bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem;z-index:100;display:flex;gap:0.25rem;';
+            menu.innerHTML = `
+                <button style="background:none;border:none;cursor:pointer;color:#fbbf24;" onclick="changeHighlightColor(this,'yellow')"><i class="fas fa-circle"></i></button>
+                <button style="background:none;border:none;cursor:pointer;color:#10b981;" onclick="changeHighlightColor(this,'green')"><i class="fas fa-circle"></i></button>
+                <button style="background:none;border:none;cursor:pointer;color:#3b82f6;" onclick="changeHighlightColor(this,'blue')"><i class="fas fa-circle"></i></button>
+                <button style="background:none;border:none;cursor:pointer;color:#ec4899;" onclick="changeHighlightColor(this,'pink')"><i class="fas fa-circle"></i></button>
+                <button style="background:none;border:none;cursor:pointer;color:var(--danger);" onclick="removeHighlight(this)"><i class="fas fa-times"></i></button>
+            `;
+
+            const rect = element.getBoundingClientRect();
+            menu.style.left = rect.left + 'px';
+            menu.style.top = (rect.bottom + 5) + 'px';
+
+            document.body.appendChild(menu);
+
+            document.addEventListener('click', function handler(e) {
+                if (!menu.contains(e.target) && e.target !== element) {
+                    menu.remove();
+                    document.removeEventListener('click', handler);
+                }
+            });
+        }
+
+        function changeHighlightColor(btn, color) {
+            const menu = btn.closest('.highlight-menu');
+            const span = document.querySelector('.highlight-menu')?.previousElementSibling;
+            if (span) {
+                span.className = `highlight ${color}`;
+            }
+            menu?.remove();
+        }
+
+        function removeHighlight(btn) {
+            const span = document.querySelector('.highlight-menu')?.previousElementSibling;
+            if (span) {
+                const parent = span.parentNode;
+                while (span.firstChild) {
+                    parent.insertBefore(span.firstChild, span);
+                }
+                parent.removeChild(span);
+            }
+            menu?.remove();
+        }
+
+        function addNote() {
+            const selection = window.getSelection();
+            if (selection.toString().length === 0) {
+                alert('Please select text to add a note');
+                return;
+            }
+            document.getElementById('noteModal').classList.add('show');
+        }
+
+        function saveNote() {
+            const text = document.getElementById('noteText').value;
+            if (text) {
+                const selection = window.getSelection();
+                const range = selection.getRangeAt(0);
+                const span = document.createElement('span');
+                span.className = 'highlight';
+                span.dataset.note = text;
+
+                try {
+                    range.surroundContents(span);
+                    document.getElementById('noteModal').classList.remove('show');
+                    document.getElementById('noteText').value = '';
+                } catch (e) {
+                    alert('Cannot add note across different elements');
+                }
+            }
+        }
+
+        function toggleBookmark() {
+            isBookmarked = !isBookmarked;
+            const btn = document.querySelector('[onclick="toggleBookmark()"]');
+            btn.classList.toggle('active', isBookmarked);
+            btn.innerHTML = isBookmarked ? '<i class="fas fa-bookmark"></i>' : '<i class="far fa-bookmark"></i>';
+        }
+
+        function toggleSidebar(side) {
+            const sidebar = document.getElementById(`sidebar${side.charAt(0).toUpperCase() + side.slice(1)}`);
+            sidebar.classList.toggle('collapsed');
+        }
+
+        function scrollToElement(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function goToArticle() {
+            document.getElementById('gotoModal').classList.add('show');
+        }
+
+        function executeGoto() {
+            const input = document.getElementById('gotoInput').value.toLowerCase();
+            const match = input.match(/article\s*(\d+)|(\d+)/);
+            if (match) {
+                const num = match[1] || match[2];
+                const element = document.getElementById(`article${num}`);
+                if (element) {
+                    scrollToElement(`article${num}`);
+                    closeModal('gotoModal');
+                } else {
+                    alert(`Article ${num} not found in this document`);
+                }
+            } else {
+                alert('Please enter a valid article number (e.g., "Article 15" or "15")');
+            }
+        }
+
+        function navigateToArticle(num) {
+            const element = document.getElementById(`article${num}`);
+            if (element) {
+                scrollToElement(`article${num}`);
+            } else {
+                alert(`Article ${num} is not in the current document. Cross-references may link to other documents.`);
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[onclick*="${tab}"]`).classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+        }
+
+        function searchInDocument() {
+            const query = document.getElementById('docSearchInput').value.toLowerCase();
+            const content = document.getElementById('documentContent');
+            const results = document.getElementById('searchResults');
+
+            if (query.length < 2) {
+                results.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">Enter at least 2 characters</p>';
+                return;
+            }
+
+            const text = content.textContent.toLowerCase();
+            const regex = new RegExp(`(${query})`, 'gi');
+            const matches = text.match(regex);
+
+            if (matches) {
+                results.innerHTML = `
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                        ${matches.length} result${matches.length > 1 ? 's' : ''} found for "${query}"
+                    </p>
+                    <div class="search-result-item" onclick="highlightSearchResult('${query}')">
+                        <span class="match">${query}</span>
+                        <div class="context">Click to highlight all occurrences in the document</div>
+                    </div>
+                `;
+            } else {
+                results.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">No results found</p>';
+            }
+        }
+
+        function highlightSearchResult(query) {
+            alert(`All occurrences of "${query}" will be highlighted in the document`);
+        }
+
+        function changeTextSize(delta) {
+            textSize = Math.max(0.75, Math.min(1.5, textSize + delta * 0.125));
+            document.getElementById('documentContent').style.fontSize = `${textSize}rem`;
+        }
+
+        function resetTextSize() {
+            textSize = 1;
+            document.getElementById('documentContent').style.fontSize = '1rem';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function showDownloadModal() {
+            document.getElementById('downloadModal').classList.add('show');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        function downloadDocument(format) {
+            alert(`Downloading document as ${format.toUpperCase()}...`);
+            closeModal('downloadModal');
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function loadReadingProgress() {
+            const container = document.getElementById('documentContainer');
+            const progress = document.getElementById('readingProgress');
+            const progressText = document.getElementById('progressText');
+
+            container.addEventListener('scroll', function() {
+                const scrollTop = container.scrollTop;
+                const scrollHeight = container.scrollHeight - container.clientHeight;
+                const percent = Math.round((scrollTop / scrollHeight) * 100);
+                progress.style.width = `${percent}%`;
+                progressText.textContent = `${percent}%`;
+
+                document.getElementById('currentPosition').textContent = `~${Math.round(percent / 2)}%`;
+            });
+        }
+
+        function saveHighlight(span, color) {
+            console.log('Highlight saved:', span.textContent.substring(0, 50), color);
+        }
+
+        document.querySelectorAll('.cross-ref').forEach(ref => {
+            ref.addEventListener('click', function() {
+                const text = this.textContent.toLowerCase();
+                const match = text.match(/article\s*(\d+)/);
+                if (match) {
+                    navigateToArticle(match[1]);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

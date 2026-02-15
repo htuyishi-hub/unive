@@ -29,6 +29,22 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Academic info
+    college_code = db.Column(db.String(20))
+    program_code = db.Column(db.String(50))
+    program_name = db.Column(db.String(200))
+    year_of_study = db.Column(db.Integer, default=1)
+    registration_number = db.Column(db.String(50))
+    
+    # Profile
+    bio = db.Column(db.Text)
+    profile_photo = db.Column(db.String(500))
+    preferences = db.Column(db.Text)  # JSON preferences
+    
+    # Knowledge Commons specific
+    reputation = db.Column(db.Integer, default=0)
+    is_verified_lecturer = db.Column(db.Boolean, default=False)
+    
     # Relationships
     enrollments = db.relationship('Enrollment', backref='student', lazy='dynamic')
     uploaded_documents = db.relationship('Document', backref='uploader', lazy='dynamic')
@@ -45,6 +61,20 @@ class User(UserMixin, db.Model):
     
     def is_instructor(self):
         return self.role in ['instructor', 'admin']
+    
+    def get_reputation_rank(self):
+        """Get reputation rank title"""
+        score = self.reputation or 0
+        if score >= 1000:
+            return 'Distinguished Scholar'
+        elif score >= 500:
+            return 'Senior Contributor'
+        elif score >= 200:
+            return 'Active Scholar'
+        elif score >= 50:
+            return 'Promising Member'
+        else:
+            return 'New Contributor'
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -144,6 +174,15 @@ class Module(db.Model):
     # Enrollment Settings
     max_students = db.Column(db.Integer, default=100)
     is_enrollment_open = db.Column(db.Boolean, default=False)
+    
+    # Legacy fields (for backward compatibility with admin.py)
+    # These fields may be used by older admin interfaces
+    program = db.Column(db.String(200))  # Program name (legacy)
+    year_of_study = db.Column(db.Integer)  # Year of study (legacy)
+    external_link = db.Column(db.String(500))  # External link (legacy)
+    year = db.Column(db.Integer)  # Shortcut for year_of_study (legacy)
+    semester = db.Column(db.String(50))  # Semester name (legacy)
+    code = db.Column(db.String(50))  # Module code alias (legacy)
     
     # Status
     is_active = db.Column(db.Boolean, default=True)
@@ -415,7 +454,141 @@ def create_default_admin(db):
             name='System Administrator',
             role='admin'
         )
-        admin.set_password('ChangeMe123!')
+        admin.set_password('password123')
         db.session.add(admin)
         db.session.commit()
-        print("Default admin created: admin@ur.ac.rw / ChangeMe123!")
+        print("Default admin created: admin@ur.ac.rw / password123")
+    else:
+        # Ensure admin has password set
+        if not admin.password_hash:
+            admin.set_password('password123')
+            db.session.commit()
+            print("Admin password reset to: password123")
+
+
+# ==================== KNOWLEDGE COMMONS MODELS ====================
+
+class KnowledgePost(db.Model):
+    """Knowledge Commons posts - structured intellectual discussions"""
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Post content
+    title = db.Column(db.String(300), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    post_type = db.Column(db.String(20), default='insight')  # question, explanation, resource, insight
+    
+    # Academic categorization
+    faculty_code = db.Column(db.String(20))  # CASS, CBE, etc.
+    course_code = db.Column(db.String(50))
+    course_name = db.Column(db.String(200))
+    tags = db.Column(db.String(500))  # Comma-separated
+    
+    # Moderation and quality
+    is_anonymous = db.Column(db.Boolean, default=False)
+    is_flagged = db.Column(db.Boolean, default=False)
+    quality_score = db.Column(db.Float, default=0.0)
+    
+    # Engagement metrics
+    likes = db.Column(db.Integer, default=0)
+    views = db.Column(db.Integer, default=0)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    author = db.relationship('User', backref='knowledge_posts')
+    answers = db.relationship('KnowledgeAnswer', backref='post', lazy='dynamic')
+    likes_relation = db.relationship('KnowledgePostLike', backref='post', lazy='dynamic')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'author': self.author.name if not self.is_anonymous else 'Anonymous',
+            'author_id': self.author_id,
+            'title': self.title,
+            'content': self.content,
+            'post_type': self.post_type,
+            'faculty_code': self.faculty_code,
+            'course_code': self.course_code,
+            'course_name': self.course_name,
+            'tags': [t.strip() for t in self.tags.split(',')] if self.tags else [],
+            'is_anonymous': self.is_anonymous,
+            'likes': self.likes,
+            'views': self.views,
+            'answers_count': self.answers.count(),
+            'created_at': self.created_at.isoformat(),
+            'quality_score': self.quality_score
+        }
+
+
+class KnowledgePostLike(db.Model):
+    """Likes on Knowledge Commons posts"""
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('knowledge_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.UniqueConstraint('post_id', 'user_id', name='_post_user_like_uc'),
+    )
+
+
+class KnowledgeAnswer(db.Model):
+    """Answers/explanations to Knowledge Commons posts"""
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('knowledge_post.id'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    content = db.Column(db.Text, nullable=False)
+    is_verified = db.Column(db.Boolean, default=False)  # Verified by instructor/admin
+    helpful_count = db.Column(db.Integer, default=0)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    author = db.relationship('User', backref='knowledge_answers')
+    helpfuls = db.relationship('HelpfulAnswer', backref='answer', lazy='dynamic')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'author': self.author.name,
+            'author_id': self.author_id,
+            'content': self.content,
+            'is_verified': self.is_verified,
+            'helpful_count': self.helpful_count,
+            'created_at': self.created_at.isoformat()
+        }
+
+
+class HelpfulAnswer(db.Model):
+    """Users marking answers as helpful"""
+    id = db.Column(db.Integer, primary_key=True)
+    answer_id = db.Column(db.Integer, db.ForeignKey('knowledge_answer.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.UniqueConstraint('answer_id', 'user_id', name='_answer_user_helpful_uc'),
+    )
+
+
+class UserFollow(db.Model):
+    """User follows for activity feed"""
+    id = db.Column(db.Integer, primary_key=True)
+    follower_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    following_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.UniqueConstraint('follower_id', 'following_id', name='_user_follow_uc'),
+    )
+    
+    # Relationships
+    follower = db.relationship('User', foreign_keys=[follower_id], 
+                               backref=db.backref('following', lazy='dynamic'))
+    following = db.relationship('User', foreign_keys=[following_id],
+                                 backref=db.backref('followers', lazy='dynamic'))

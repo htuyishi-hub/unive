@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-container {
+            background: var(--header-bg);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #0f2540 100%);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .login-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            font-size: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(198, 153, 60, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(198, 153, 60, 0.4);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .alert {
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 0.75rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .feature i {
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        .guidance {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+        }
+
+        .guidance i {
+            color: var(--accent);
+            margin-right: 0.5rem;
+        }
+
+        /* Validation styles */
+        .form-group.error .form-control {
+            border-color: var(--danger);
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-login.loading .spinner {
+            display: block;
+        }
+
+        .btn-login.loading .btn-text {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-logo">
+                <i class="fas fa-university"></i>
+            </div>
+            <h1 class="login-title">UR Open Courseware</h1>
+            <p class="login-subtitle">Access your academic space securely</p>
+        </div>
+        <div class="login-body">
+            <div class="alert alert-error" id="errorAlert">
+                <i class="fas fa-exclamation-circle"></i> <span id="errorMessage"></span>
+            </div>
+            
+            <div class="alert alert-success" id="successAlert">
+                <i class="fas fa-check-circle"></i> <span id="successMessage"></span>
+            </div>
+            
+            <form id="loginForm" novalidate>
+                <div class="form-group" id="regGroup">
+                    <label class="form-label">
+                        <i class="fas fa-id-card"></i> Registration Number
+                    </label>
+                    <input type="text" id="regNumber" class="form-control" 
+                           placeholder="e.g., 220000001" required>
+                    <div class="error-message">Please enter your registration number</div>
+                </div>
+                
+                <div class="form-group" id="emailGroup">
+                    <label class="form-label">
+                        <i class="fas fa-envelope"></i> Institutional Email
+                    </label>
+                    <input type="email" id="email" class="form-control" 
+                           placeholder="your.name@ur.ac.rw" required>
+                    <div class="error-message">Please enter a valid institutional email</div>
+                </div>
+                
+                <div class="form-group" id="passwordGroup">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <input type="password" id="password" class="form-control" 
+                           placeholder="Create a secure password" required minlength="6">
+                    <div class="error-message">Password must be at least 6 characters</div>
+                </div>
+                
+                <div class="form-group" id="confirmGroup" style="display: none;">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i> Confirm Password
+                    </label>
+                    <input type="password" id="confirmPassword" class="form-control" 
+                           placeholder="Confirm your password" required>
+                    <div class="error-message">Passwords do not match</div>
+                </div>
+                
+                <button type="submit" class="btn-login" id="submitBtn">
+                    <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+
+            <div class="divider">
+                <span>or</span>
+            </div>
+            
+            <div class="guidance">
+                <i class="fas fa-info-circle"></i>
+                New students: Your account will be created automatically after verification
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <i class="fas fa-book"></i>
+                    Personalized Courses
+                </div>
+                <div class="feature">
+                    <i class="fas fa-search"></i>
+                    Full-Text Search
+                </div>
+                <div class="feature">
+                    <i class="fas fa-bell"></i>
+                    Smart Alerts
+                </div>
+                <div class="feature">
+                    <i class="fas fa-bookmark"></i>
+                    Annotations
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const regInput = document.getElementById('regNumber');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirmPassword');
+        const confirmGroup = document.getElementById('confirmGroup');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        let isNewUser = false;
+
+        // Check if user exists when typing registration number
+        regInput.addEventListener('blur', function() {
+            const regNumber = this.value.trim();
+            if (regNumber.length >= 5) {
+                checkUserExists(regNumber);
+            }
+        });
+
+        function checkUserExists(regNumber) {
+            const users = JSON.parse(localStorage.getItem('ur_users') || '{}');
+            const existingUser = Object.values(users).find(u => u.regNumber === regNumber);
+            
+            if (existingUser) {
+                isNewUser = false;
+                confirmGroup.style.display = 'none';
+                emailInput.value = existingUser.email || '';
+                emailInput.disabled = true;
+                submitBtn.innerHTML = '<span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>';
+                showSuccess('Account found! Enter your password to continue.');
+            } else {
+                isNewUser = true;
+                confirmGroup.style.display = 'block';
+                emailInput.disabled = false;
+                submitBtn.innerHTML = '<span class="btn-text"><i class="fas fa-user-plus"></i> Create Account</span>';
+            }
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validateRegNumber(regNumber) {
+            return regNumber.length >= 5;
+        }
+
+        function showError(message) {
+            const alert = document.getElementById('errorAlert');
+            document.getElementById('errorMessage').textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const alert = document.getElementById('successAlert');
+            document.getElementById('successMessage').textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
+            document.getElementById('errorAlert').style.display = 'none';
+        }
+
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearErrors();
+            
+            const regNumber = regInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const confirmPassword = confirmInput.value;
+            
+            let isValid = true;
+
+            // Validation
+            if (!validateRegNumber(regNumber)) {
+                document.getElementById('regGroup').classList.add('error');
+                isValid = false;
+            }
+
+            if (!validateEmail(email)) {
+                document.getElementById('emailGroup').classList.add('error');
+                isValid = false;
+            }
+
+            if (password.length < 6) {
+                document.getElementById('passwordGroup').classList.add('error');
+                isValid = false;
+            }
+
+            if (isNewUser && password !== confirmPassword) {
+                document.getElementById('confirmGroup').classList.add('error');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                showError('Please fill in all fields correctly');
+                return;
+            }
+
+            // Show loading
+            submitBtn.classList.add('loading');
+
+            // Simulate API call delay
+            await new Promise(r => setTimeout(r, 1000));
+
+            const users = JSON.parse(localStorage.getItem('ur_users') || '{}');
+
+            if (isNewUser) {
+                // Create new account
+                const user = {
+                    regNumber: regNumber,
+                    email: email,
+                    password: password,
+                    name: extractNameFromEmail(email),
+                    onboardingComplete: false,
+                    college: null,
+                    program: null,
+                    programCode: null,
+                    year: null,
+                    academicYear: null,
+                    preferences: {
+                        darkMode: true,
+                        readingMode: 'default',
+                        textSize: 'medium',
+                        notificationsEnabled: true
+                    },
+                    viewedModules: [],
+                    bookmarks: [],
+                    annotations: [],
+                    createdAt: new Date().toISOString()
+                };
+                
+                users[email] = user;
+                localStorage.setItem('ur_users', JSON.stringify(users));
+                localStorage.setItem('ur_current_user', JSON.stringify(user));
+                
+                window.location.href = 'student-onboarding.html';
+            } else {
+                // Existing user login
+                const user = Object.values(users).find(u => u.regNumber === regNumber);
+                
+                if (user && user.password === password) {
+                    localStorage.setItem('ur_current_user', JSON.stringify(user));
+                    
+                    if (user.onboardingComplete) {
+                        window.location.href = 'student-dashboard.html';
+                    } else {
+                        window.location.href = 'student-onboarding.html';
+                    }
+                } else {
+                    showError('Invalid password. Please try again.');
+                }
+            }
+
+            submitBtn.classList.remove('loading');
+        });
+
+        function extractNameFromEmail(email) {
+            const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return name || 'Student';
+        }
+
+        // Real-time validation
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', function() {
+                this.closest('.form-group').classList.remove('error');
+            });
+        });
+    </script>
+</body>
+</html>

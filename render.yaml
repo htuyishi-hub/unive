@@ -1,0 +1,41 @@
+# Render Blueprint Specification
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Web Service
+  - type: web
+    name: ur-academia
+    env: python
+    rootDir: ur-courses
+    buildCommand: pip install -r ur-courses/requirements.txt
+    startCommand: cd ur-courses && python app.py
+    plan: free
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URI
+        fromDatabase:
+          name: ur_academia_db
+          property: connectionString
+      - key: PORT
+        value: 5000
+    disk:
+      name: uploads
+      sizeGB: 1
+      mountPath: /app/uploads
+
+  # PostgreSQL Database
+  - type: pserv
+    name: ur_academia_db
+    plan: free
+    postgresVersion: 15
+
+# Persistent Disk for uploads (if not using disk above)
+# disks:
+#   - name: uploads
+#     mountPath: /app/uploads
+#     sizeGB: 1

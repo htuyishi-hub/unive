@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - UR Open Courseware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c6993c;
+            --accent-light: #d4a84b;
+            --bg: #0f172a;
+            --header-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--header-bg);
+            padding: 0.85rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            background: linear-gradient(to right, #f472b6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-nav a:hover, .header-nav a.active {
+            color: var(--accent);
+        }
+
+        .notification-btn {
+            position: relative;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .notification-btn:hover {
+            color: var(--accent);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            background: var(--danger);
+            color: white;
+            font-size: 0.6rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .user-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Main Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.25rem;
+            display: grid;
+            grid-template-columns: 260px 1fr 300px;
+            gap: 1.25rem;
+        }
+
+        /* Left Sidebar */
+        .sidebar-left {
+            position: sticky;
+            top: 70px;
+            height: fit-content;
+        }
+
+        .profile-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .profile-photo {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: white;
+            margin: 0 auto 0.75rem;
+        }
+
+        .profile-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .profile-email {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .academic-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+            padding: 0.4rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .progress-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .progress-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--accent), var(--accent-light));
+            border-radius: 9999px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .welcome-text h2 {
+            font-size: 1.35rem;
+            margin-bottom: 0.25rem;
+            color: white;
+        }
+
+        .welcome-text p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+        }
+
+        .academic-info {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .academic-item {
+            text-align: center;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .academic-item .label {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .academic-item .value {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        /* Section Cards */
+        .section-card {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-header h3 {
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-header h3 i {
+            color: var(--accent);
+        }
+
+        .section-link {
+            color: var(--accent);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .section-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Course Cards */
+        .course-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .course-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .course-item:hover {
+            background: rgba(30, 41, 59, 0.9);
+            transform: translateX(3px);
+        }
+
+        .course-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .course-info {
+            flex: 1;
+        }
+
+        .course-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .course-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .course-progress {
+            width: 70px;
+        }
+
+        .mini-progress {
+            height: 4px;
+            background: var(--border);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-bottom: 0.15rem;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 9999px;
+        }
+
+        .progress-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        /* Right Sidebar */
+        .sidebar-right {
+            position: sticky;
+            top: 70px;
+            height: fit-content;
+        }
+
+        .notification-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.6rem;
+            background: var(--card-bg);
+            border-radius: 6px;
+        }
+
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .notification-icon.new {
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+        }
+
+        .notification-content h4 {
+            font-size: 0.8rem;
+            margin-bottom: 0.1rem;
+        }
+
+        .notification-content p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.6rem;
+            background: var(--card-bg);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.4rem 0.85rem;
+            background: var(--card-bg);
+            border: none;
+            border-radius: 9999px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.3;
+        }
+
+        /* Semester Group Header */
+        .semester-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .semester-header {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        /* Badge styles */
+        .status-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 500;
+        }
+
+        .status-badge.viewed {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-badge.new {
+            background: rgba(198, 153, 60, 0.2);
+            color: var(--accent);
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar-left, .sidebar-right {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .welcome-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .academic-info {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1 onclick="window.location.href='student-dashboard.html'">
+            <i class="fas fa-university"></i> UR Open Courseware
+        </h1>
+        <nav class="header-nav">
+            <a href="student-courses.html" onclick="navigateTo('courses')">
+                <i class="fas fa-book"></i> My Courses
+            </a>
+            <a href="student-profile.html" onclick="navigateTo('profile')">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <button class="notification-btn" onclick="showNotifications()">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notifBadge">3</span>
+            </button>
+            <div class="user-menu" onclick="logout()">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <span class="user-name" id="userName">User</span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Left Sidebar -->
+        <aside class="sidebar-left">
+            <div class="profile-card">
+                <div class="profile-photo">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h2 class="profile-name" id="profileName">Loading...</h2>
+                <p class="profile-email" id="profileEmail">...</p>
+                <div class="academic-badge" id="academicBadge">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span id="badgeText">Loading...</span>
+                </div>
+            </div>
+
+            <div class="progress-card">
+                <div class="progress-header">
+                    <span class="progress-title">Your Progress</span>
+                    <span class="progress-value" id="progressValue">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div class="progress-stats">
+                    <span id="modulesViewed">0 viewed</span>
+                    <span id="totalModules">of 0 total</span>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <button class="action-btn" onclick="navigateTo('courses')">
+                    <i class="fas fa-book"></i> Courses
+                </button>
+                <button class="action-btn" onclick="toggleTheme()">
+                    <i class="fas fa-moon"></i> Theme
+                </button>
+                <button class="action-btn" onclick="navigateTo('profile')">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="action-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome Banner -->
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h2 id="welcomeTitle"><i class="fas fa-hand-wave"></i> Welcome back!</h2>
+                    <p>Continue your learning journey</p>
+                </div>
+                <div class="academic-info">
+                    <div class="academic-item">
+                        <div class="label">College</div>
+                        <div class="value" id="infoCollege">-</div>
+                    </div>
+                    <div class="academic-item">
+                        <div class="label">Program</div>
+                        <div class="value" id="infoProgramCode">-</div>
+                    </div>
+                    <div class="academic-item">
+                        <div class="label">Year</div>
+                        <div class="value" id="infoYear">-</div>
+                    </div>
+                    <div class="academic-item">
+                        <div class="label" style="font-size: 0.6rem;">Academic Year</div>
+                        <div class="value" style="font-size: 0.8rem;" id="infoAcademicYear">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Continue Reading -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-book-open"></i> Continue Reading</h3>
+                    <span class="section-link" onclick="navigateTo('courses')">View All</span>
+                </div>
+                <div class="course-list" id="continueReading">
+                    <div class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <p>Start your first module</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Modules -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Your Modules</h3>
+                </div>
+                <div class="filters">
+                    <button class="filter-btn active" onclick="filterSemester('all')">All</button>
+                    <button class="filter-btn" onclick="filterSemester('sem1')">Semester 1</button>
+                    <button class="filter-btn" onclick="filterSemester('sem2')">Semester 2</button>
+                    <button class="filter-btn" onclick="filterSemester('year1')">Year 1</button>
+                    <button class="filter-btn" onclick="filterSemester('year2')">Year 2</button>
+                </div>
+                <div id="semesterCourses">
+                    <!-- courses grouped by semester -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="sidebar-right">
+            <!-- Recently Added -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-clock"></i> Recent</h3>
+                </div>
+                <div class="course-list" id="recentModules">
+                    <div class="notification-item" style="display: block; text-align: center;">
+                        <p style="font-size: 0.8rem;">No recent modules</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="section-card" style="margin-top: 1.25rem;">
+                <div class="section-header">
+                    <h3><i class="fas fa-bell"></i> Notifications</h3>
+                    <span class="notification-badge">3</span>
+                </div>
+                <div class="notification-list">
+                    <div class="notification-item">
+                        <div class="notification-icon new">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h4>New module</h4>
+                            <p>Constitutional Law II - 2h ago</p>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon new">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h4>Assignment due</h4>
+                            <p>Contract Law - Tomorrow</p>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon new">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h4>Announcement</h4>
+                            <p>Exam schedule - 1d ago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Sample course data with program codes
+        const allCourses = {
+            'cass': [
+                { id: 1, code: 'BH8LLB', name: 'Introduction to Legal Systems', lecturer: 'Prof. John Mugisha', year: 1, semester: 1, upload_date: '2024-09-15', file_size: '2.4 MB', viewed: false, progress: 0 },
+                { id: 2, code: 'BH8LLB', name: 'Constitutional Law I', lecturer: 'Prof. Sarah Kamanzi', year: 1, semester: 1, upload_date: '2024-09-20', file_size: '3.1 MB', viewed: false, progress: 0 },
+                { id: 3, code: 'BH8LLB', name: 'Criminal Law I', lecturer: 'Prof. Robert Nzabimana', year: 2, semester: 1, upload_date: '2024-10-01', file_size: '2.8 MB', viewed: false, progress: 0 },
+                { id: 4, code: 'BH8LLB', name: 'Contract Law', lecturer: 'Prof. Grace Mukase', year: 2, semester: 1, upload_date: '2024-10-05', file_size: '3.5 MB', viewed: false, progress: 0 },
+                { id: 5, code: 'BH8JCO', name: 'Journalism Fundamentals', lecturer: 'Dr. Jean Baptiste', year: 1, semester: 1, upload_date: '2024-09-10', file_size: '2.1 MB', viewed: false, progress: 0 },
+                { id: 6, code: 'BH8SOC', name: 'Introduction to Sociology', lecturer: 'Dr. Marie Claire', year: 1, semester: 2, upload_date: '2024-10-12', file_size: '2.3 MB', viewed: false, progress: 0 }
+            ],
+            'cst': [
+                { id: 7, code: 'BH8CSC', name: 'Introduction to Computer Science', lecturer: 'Dr. Ntirushwa', year: 1, semester: 1, upload_date: '2024-09-15', file_size: '2.8 MB', viewed: false, progress: 0 },
+                { id: 8, code: 'BH8CSC', name: 'Data Structures', lecturer: 'Dr. Hakizimana', year: 2, semester: 1, upload_date: '2024-10-01', file_size: '3.2 MB', viewed: false, progress: 0 },
+                { id: 9, code: 'BH8COE', name: 'Digital Electronics', lecturer: 'Ing. Ntarama', year: 1, semester: 1, upload_date: '2024-09-20', file_size: '3.1 MB', viewed: false, progress: 0 },
+                { id: 10, code: 'BH8ISY', name: 'Information Systems Analysis', lecturer: 'Dr. Mucyo', year: 2, semester: 1, upload_date: '2024-10-05', file_size: '2.5 MB', viewed: false, progress: 0 },
+                { id: 11, code: 'BH8STA', name: 'Statistics I', lecturer: 'Prof. Rurangwa', year: 1, semester: 1, upload_date: '2024-10-10', file_size: '2.2 MB', viewed: false, progress: 0 },
+                { id: 12, code: 'BH8APM', name: 'Calculus I', lecturer: 'Dr. Niyonkuru', year: 1, semester: 1, upload_date: '2024-10-15', file_size: '2.4 MB', viewed: false, progress: 0 }
+            ],
+            'cbe': [
+                { id: 13, code: 'BH8BBA', name: 'Introduction to Business', lecturer: 'Dr. Patrick Musemakweli', year: 1, semester: 1, upload_date: '2024-09-15', file_size: '2.5 MB', viewed: false, progress: 0 },
+                { id: 14, code: 'BH8ACC', name: 'Principles of Accounting', lecturer: 'CPA John', year: 1, semester: 1, upload_date: '2024-09-20', file_size: '3.0 MB', viewed: false, progress: 0 },
+                { id: 15, code: 'BH8ECO', name: 'Principles of Economics', lecturer: 'Dr. Emile', year: 1, semester: 1, upload_date: '2024-10-01', file_size: '2.8 MB', viewed: false, progress: 0 },
+                { id: 16, code: 'BH8BBA', name: 'Business Law', lecturer: 'Dr. Christine', year: 2, semester: 1, upload_date: '2024-10-05', file_size: '2.9 MB', viewed: false, progress: 0 }
+            ],
+            'cmhs': [
+                { id: 17, code: 'BH8MED', name: 'Introduction to Medicine', lecturer: 'Dr. Ahishakiye', year: 1, semester: 1, upload_date: '2024-09-15', file_size: '4.5 MB', viewed: false, progress: 0 },
+                { id: 18, code: 'BH8NUR', name: 'Foundations of Nursing', lecturer: 'RN Grace', year: 1, semester: 1, upload_date: '2024-09-20', file_size: '3.2 MB', viewed: false, progress: 0 },
+                { id: 19, code: 'BH8MED', name: 'Anatomy & Physiology I', lecturer: 'Dr. Niyonkuru', year: 2, semester: 1, upload_date: '2024-10-01', file_size: '5.1 MB', viewed: false, progress: 0 }
+            ],
+            'caff': [
+                { id: 20, code: 'BH8AGR', name: 'Introduction to Agriculture', lecturer: 'Dr. Hakizimana', year: 1, semester: 1, upload_date: '2024-09-15', file_size: '2.8 MB', viewed: false, progress: 0 },
+                { id: 21, code: 'BH8FST', name: 'Food Science Fundamentals', lecturer: 'Dr. Mucyo', year: 1, semester: 1, upload_date: '2024-09-20', file_size: '3.0 MB', viewed: false, progress: 0 }
+            ],
+            'ce': [
+                { id: 22, code: 'BH8EDU', name: 'Foundations of Education', lecturer: 'Prof. Rurangwa', year: 1, semester: 1, upload_date: '2024-09-15', file_size: '2.4 MB', viewed: false, progress: 0 },
+                { id: 23, code: 'BH8EDU', name: 'Child Development', lecturer: 'Dr. Ntarama', year: 1, semester: 1, upload_date: '2024-09-20', file_size: '2.6 MB', viewed: false, progress: 0 }
+            ],
+            'cvas': [
+                { id: 24, code: 'BH8VET', name: 'Introduction to Veterinary Medicine', lecturer: 'Dr. Ahishakiye', year: 1, semester: 1, upload_date: '2024-09-15', file_size: '4.2 MB', viewed: false, progress: 0 },
+                { id: 25, code: 'BH8ANS', name: 'Animal Anatomy', lecturer: 'Dr. Marie Claire', year: 1, semester: 1, upload_date: '2024-09-20', file_size: '3.8 MB', viewed: false, progress: 0 }
+            ]
+        };
+
+        const collegeDisplayNames = {
+            'cass': 'College of Arts & Social Sciences',
+            'cbe': 'College of Business & Economics',
+            'cmhs': 'College of Medicine & Health Sciences',
+            'cst': 'College of Science & Technology',
+            'caff': 'College of Agriculture & Food Sciences',
+            'ce': 'College of Education',
+            'cvas': 'College of Veterinary & Animal Sciences'
+        };
+
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+        });
+
+        function loadUserData() {
+            currentUser = JSON.parse(localStorage.getItem('ur_current_user') || {});
+            
+            if (!currentUser.onboardingComplete) {
+                window.location.href = 'student-onboarding.html';
+                return;
+            }
+
+            // Update UI with user data
+            document.getElementById('profileName').textContent = currentUser.name || 'Student';
+            document.getElementById('profileEmail').textContent = currentUser.email || 'student@ur.ac.rw';
+            document.getElementById('userName').textContent = currentUser.name || 'Student';
+            document.getElementById('userAvatar').textContent = (currentUser.name || 'U').charAt(0);
+
+            // Academic badge
+            const badgeText = `${currentUser.programCode || currentUser.program || ''}`;
+            document.getElementById('badgeText').textContent = badgeText;
+
+            // Info display
+            const college = collegeDisplayNames[currentUser.college] || currentUser.college;
+            document.getElementById('infoCollege').textContent = college;
+            document.getElementById('infoProgramCode').textContent = currentUser.programCode || '-';
+            document.getElementById('infoYear').textContent = `Year ${currentUser.year || 1}`;
+            document.getElementById('infoAcademicYear').textContent = currentUser.academicYear || '2024-2025';
+
+            // Welcome message
+            const programNames = {
+                'BH8LLB': 'Bachelor of Law Student',
+                'BH8CSC': 'Computer Science Student',
+                'BH8COE': 'Computer Engineering Student',
+                'BH8BBA': 'Business Administration Student',
+                'BH8MED': 'Medicine Student',
+                'BH8AGR': 'Agriculture Student',
+                'BH8EDU': 'Education Student',
+                'BH8VET': 'Veterinary Medicine Student'
+            };
+            
+            const programName = programNames[currentUser.programCode] || '';
+            document.getElementById('welcomeTitle').innerHTML = `<i class="fas fa-hand-wave"></i> Welcome, ${programName || 'Student'}`;
+
+            // Load courses
+            loadCourses();
+        }
+
+        function loadCourses() {
+            const courses = allCourses[currentUser.college] || [];
+            const viewedModules = currentUser.viewedModules || [];
+
+            // Update progress
+            const viewedCount = courses.filter(c => viewedModules.includes(c.id)).length;
+            const progress = courses.length > 0 ? Math.round((viewedCount / courses.length) * 100) : 0;
+
+            document.getElementById('progressValue').textContent = `${progress}%`;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('modulesViewed').textContent = `${viewedCount} viewed`;
+            document.getElementById('totalModules').textContent = `of ${courses.length}`;
+
+            // Continue reading
+            const continueReading = document.getElementById('continueReading');
+            const viewedCourses = courses.filter(c => viewedModules.includes(c.id)).slice(0, 3);
+            
+            if (viewedCourses.length > 0) {
+                continueReading.innerHTML = viewedCourses.map(course => `
+                    <div class="course-item" onclick="openCourse(${course.id})">
+                        <div class="course-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="course-info">
+                            <div class="course-title">${course.name}</div>
+                            <div class="course-meta">
+                                <span><i class="fas fa-code"></i> ${course.code}</span>
+                                <span><i class="fas fa-user"></i> ${course.lecturer}</span>
+                            </div>
+                        </div>
+                        <div class="course-progress">
+                            <div class="mini-progress">
+                                <div class="mini-progress-fill" style="width: ${course.progress || 50}%"></div>
+                            </div>
+                            <div class="progress-label">${course.progress || 50}%</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Render courses by semester
+            renderSemesterCourses(courses);
+        }
+
+        function renderSemesterCourses(courses) {
+            const container = document.getElementById('semesterCourses');
+            
+            if (courses.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No courses found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Filter by user's year if selected
+            let filteredCourses = courses;
+            if (currentUser.year) {
+                filteredCourses = courses.filter(c => c.year === currentUser.year);
+            }
+
+            // Group by semester
+            const grouped = {};
+            filteredCourses.forEach(course => {
+                const key = `Semester ${course.semester} - Year ${course.year}`;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(course);
+            });
+
+            container.innerHTML = Object.entries(grouped).map(([key, courses]) => `
+                <div class="semester-group">
+                    <div class="semester-header">
+                        <i class="fas fa-folder-open"></i> ${key}
+                    </div>
+                    <div class="course-list">
+                        ${courses.map(course => `
+                            <div class="course-item" onclick="openCourse(${course.id})">
+                                <div class="course-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="course-info">
+                                    <div class="course-title">${course.name}</div>
+                                    <div class="course-meta">
+                                        <span><i class="fas fa-code"></i> ${course.code}</span>
+                                        <span><i class="fas fa-user"></i> ${course.lecturer}</span>
+                                        <span><i class="fas fa-calendar"></i> ${course.upload_date}</span>
+                                    </div>
+                                </div>
+                                ${currentUser.viewedModules?.includes(course.id) 
+                                    ? '<span class="status-badge viewed"><i class="fas fa-check"></i> Viewed</span>' 
+                                    : '<span class="status-badge new"><i class="fas fa-play"></i> Start</span>'}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterSemester(filter) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const courses = allCourses[currentUser.college] || [];
+            let filtered = courses;
+
+            if (filter === 'sem1') {
+                filtered = courses.filter(c => c.semester === 1);
+            } else if (filter === 'sem2') {
+                filtered = courses.filter(c => c.semester === 2);
+            } else if (filter === 'year1') {
+                filtered = courses.filter(c => c.year === 1);
+            } else if (filter === 'year2') {
+                filtered = courses.filter(c => c.year === 2);
+            }
+
+            renderSemesterCourses(filtered);
+        }
+
+        function openCourse(courseId) {
+            alert(`Opening course ${courseId} in document reader...`);
+        }
+
+        function navigateTo(page) {
+            if (page === 'courses') {
+                window.location.href = 'student-courses.html';
+            } else if (page === 'profile') {
+                window.location.href = 'student-profile.html';
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function logout() {
+            localStorage.removeItem('ur_current_user');
+            window.location.href = 'student-login.html';
+        }
+
+        function showNotifications() {
+            alert('Notifications');
+        }
+    </script>
+</body>
+</html>
